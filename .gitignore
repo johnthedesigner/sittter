@@ -6,3 +6,9 @@ coverage
 playwright-report
 test-results
 .DS_Store
+
+# Service account JSON keys, in case one is ever downloaded into the repo.
+# A committed private key means revoking it and issuing a new one.
+*-service-account*.json
+*service-account-key*.json
+gcp-key*.json
