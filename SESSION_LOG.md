@@ -9,7 +9,13 @@
 
 **Housekeeping session run 2026-08-19.** Task entries in `tasks/phase-0.md` compressed (388 → 207 lines), Phase 0 session entries archived to `logs/phase-0.md`, seven entries added to the AGENTS.md Patterns established section.
 
-**Phase 0 gate fully closed.** The human read and accepted the `pnpm demo` output on 2026-08-19, which was the last outstanding item.
+**Phase 0 gate fully closed**, including the human reading and accepting the `pnpm demo` output on 2026-08-19.
+
+**`tasks/phase-1.md` is generated, reviewed, and committed.** Five tasks: schema and migration; repositories and seed; the email service; magic link issue and consume; the sign-in surface and session guard. Phase 1 may begin at Task 1.1.
+
+**Two things Task 1.2 must not lose track of:**
+- `passWithNoTests` comes out of `vitest.integration.config.ts` in that task. It was needed to pass the scaffold gate against an empty glob; once the glob matches real files, one broken by a rename would pass silently instead of failing.
+- The `select()` rule bites for the first time. Repositories serving customer surfaces must name every column they return, and Phase 3 audits it at the query layer rather than the template.
 
 **Decisions the human owns.** None block Phase 1. All five are set out with recommendations in `docs/phase-0-retro.md`:
 

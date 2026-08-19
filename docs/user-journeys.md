@@ -259,6 +259,8 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 |---|---|---|---|
 | *(none yet)* | | | |
 
+> **Phase boundary review, 2026-08-19 (Phase 0 → Phase 1).** `tasks/phase-1.md` read in full. Phase 0 enabled no journey steps — it produced `src/core/` and no user-facing surface. Phase 1 enables Journey 8 (8.1.1–8.1.6) and nothing else; Journey 8 already describes that behavior completely, so no journey was added, extended, or revised, and no deferral became testable. The row for Journey 8 is added when Task 1.5 completes, per the per-task rule.
+
 ### Steps not covered by automated tests
 
 Populated as coverage decisions are made. Each entry names a reason: deferred, manual-only, or covered by integration tests.

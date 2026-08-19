@@ -185,10 +185,10 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [x] ESLint's restricted-import rule for `src/core/` is active and demonstrably fails on a deliberate violation — proved during the scaffold session and re-proved after every config change
 - [x] `SESSION_LOG.md` has a complete entry for every session in this phase
 - [x] `docs/plan-summary.md` status line updated for Phase 0
-- [ ] `docs/user-journeys.md` reviewed per its maintenance rule — **partially.** Phase 0 enabled no journey steps, so nothing needed revising. The forward-looking half of the rule requires reading `tasks/phase-1.md`, which does not exist yet.
+- [x] `docs/user-journeys.md` reviewed per its maintenance rule — 2026-08-19, after `tasks/phase-1.md` was generated. Phase 0 enabled no journey steps. Phase 1 enables Journey 8 only, which is already described in full; no journey needed adding or extending, no deferral became testable, no step's behavior changed. The coverage table is populated per the per-task rule as Task 1.5 completes.
 - [x] Phase retrospective written to `docs/phase-0-retro.md`
 - [x] Housekeeping session run — 2026-08-19, `docs/META-PLAN.md` §8
-- [ ] `tasks/phase-1.md` generated, reviewed, and committed — `docs/META-PLAN.md` §3, a dedicated planning session in this repository that writes the task file and no application code
+- [x] `tasks/phase-1.md` generated, reviewed, and committed — 2026-08-19, `docs/META-PLAN.md` §3, a dedicated planning session that wrote the task file and no application code
 
 *Note: `pnpm test:integration` and `pnpm test:e2e` are expected to exit cleanly with zero tests in this phase. That is a pass, not a skip.*
 
