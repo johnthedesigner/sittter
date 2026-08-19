@@ -424,6 +424,24 @@ const testEnv = loadEnv({ path: '.env.test' }).parsed ?? {}
 
 Established because: `drizzle.config.ts` had been reading `process.env.DATABASE_URL` as `undefined` from the moment it was written, and the failure looked like a driver problem.
 
+### An empty variable in .env.local silently overrides a real one in .env
+
+Next.js loads `.env.local` **after** `.env` and lets it win. An empty assignment is a value, not an absence, so a half-filled `.env.local` shadows working configuration — and the error appears somewhere else entirely.
+
+```
+# .env        RESEND_API_KEY=re_live_key...      ← real, correct
+# .env.local  RESEND_API_KEY=                    ← empty, and it WINS
+
+# symptom, on submitting the sign-in form:
+#   Environment is not valid:
+#     RESEND_API_KEY: RESEND_API_KEY is required
+# ...on a machine whose .env plainly has it set.
+```
+
+A script using `import 'dotenv/config'` reads `.env` only and will NOT reproduce this, so the service layer tests clean while the app fails.
+
+Established because: a `.env.local` written early as a fill-in-the-blanks template was never deleted after the values went into `.env` instead. Do not leave a template at a path the framework treats as higher-precedence configuration. Diagnose with `grep -c '^[A-Z_]*=$' .env.local`.
+
 ### Ignore the whole .env family, not the variants that exist today
 
 `.gitignore` listed `.env` and `.env.local`. `.env.test` was created months later, holds a live Neon connection string, and was one `git add -A` from being committed.
