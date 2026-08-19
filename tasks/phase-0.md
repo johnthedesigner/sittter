@@ -181,13 +181,13 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [x] `pnpm test:unit` passes with zero failures — 206 tests, 7 files
 - [x] `pnpm typecheck` passes with zero errors
 - [x] `pnpm lint` passes with zero errors
-- [ ] `pnpm demo` output read by a **human** and judged correct, not merely non-throwing — **awaiting the human.** The agent read it and corrected two defects it found; that is not the same check.
+- [x] `pnpm demo` output read by a **human** and judged correct, not merely non-throwing — read and accepted 2026-08-19.
 - [x] ESLint's restricted-import rule for `src/core/` is active and demonstrably fails on a deliberate violation — proved during the scaffold session and re-proved after every config change
 - [x] `SESSION_LOG.md` has a complete entry for every session in this phase
 - [x] `docs/plan-summary.md` status line updated for Phase 0
 - [ ] `docs/user-journeys.md` reviewed per its maintenance rule — **partially.** Phase 0 enabled no journey steps, so nothing needed revising. The forward-looking half of the rule requires reading `tasks/phase-1.md`, which does not exist yet.
 - [x] Phase retrospective written to `docs/phase-0-retro.md`
-- [ ] Housekeeping session run — human-owned, `docs/META-PLAN.md` §8
+- [x] Housekeeping session run — 2026-08-19, `docs/META-PLAN.md` §8
 - [ ] `tasks/phase-1.md` generated, reviewed, and committed — `docs/META-PLAN.md` §3, a dedicated planning session in this repository that writes the task file and no application code
 
 *Note: `pnpm test:integration` and `pnpm test:e2e` are expected to exit cleanly with zero tests in this phase. That is a pass, not a skip.*

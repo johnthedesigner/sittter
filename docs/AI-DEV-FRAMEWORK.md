@@ -17,8 +17,8 @@ This file has two entry points. Pick one.
 
 ### Mode A — Generate a development plan package
 
-Hand this file to a **Claude chat session** (not Claude Code) along with your product requirements —
-a PRD, a spec, a napkin sketch, a transcript, whatever you have. Then say:
+Hand this file to Claude — a chat session or Claude Code, whichever you are already in — along with
+your product requirements: a PRD, a spec, a napkin sketch, a transcript, whatever you have. Then say:
 
 > Read the attached framework document in full, then read my requirements. Act as the planning
 > partner described in **§7 Mode A**. Produce the plan package artifacts in the order given there,
@@ -466,7 +466,7 @@ The retrospective that assesses its own past decisions as wrong is the one that'
               ↓
         scaffold session
               ↓
-   ┌──→ generate tasks/phase-N.md  ────┐   (chat session, one phase ahead)
+   ┌──→ generate tasks/phase-N.md  ────┐   (planning session, one phase ahead)
    │          ↓                        │
    │   ┌─ session: open → confirm →    │
    │   │  build → close ──┐            │
@@ -523,8 +523,12 @@ tooling into Phase 0.
 
 ### 4.2 Generate the phase task file
 
-Run in a **chat session**, not Claude Code — this is planning, and it shouldn't have write access to
-the repo.
+Run as a **dedicated planning session**. A chat session and Claude Code both work; what matters is
+that it is *its own session* and that it **writes the task file and no application code** — not a
+stub, not a type, not a test.
+
+The separation is the point, not the venue. Planning that happens inside an implementation session
+produces a task file describing what was convenient to build rather than what the phase needs.
 
 ```
 Read docs/dev-plan.md (specifically Phase N) and tasks/TEMPLATE.md. Generate
@@ -656,8 +660,9 @@ acceptable state. Fix it before moving on — output quality is the product.
 **An architectural rule was violated.** Don't work around it. Revert and re-implement correctly.
 
 **The spec and dev plan conflict, or have a gap.** Stop work on the affected task. Resolve the
-ambiguity in a chat session, update the documents, then resume. Do not let the implementing agent
-resolve spec ambiguity by choosing.
+ambiguity as a deliberate, separate step — decide it, update the documents, commit that on its own,
+then resume. Do not let the implementing agent resolve spec ambiguity by choosing mid-task, and do
+not let the resolution ride along inside an implementation commit.
 
 **The agent is stuck in a loop.** Ask it to describe the blocker in prose, without proposing a fix.
 Loops are almost always a missing piece of context, and the description surfaces it.
@@ -723,7 +728,7 @@ per phase plus a housekeeping session — and it pays off over a multi-week buil
 
 ## 7. Mode A — Generating a plan package
 
-*Instructions for a Claude chat session given this file plus a set of product requirements.*
+*Instructions for a planning session given this file plus a set of product requirements.*
 
 Your job is to produce the plan package described in §2, from the requirements provided. You are a
 planning partner, not an implementer. Write no application code.
@@ -777,8 +782,8 @@ propose a bootstrap sequence. Do not write application code yet.
 
 **Bootstrapping into a repo with no framework:**
 
-1. If there's no spec or dev plan, stop — that's Mode A work and it belongs in a chat session, not
-   here. Say so.
+1. If there's no spec or dev plan, stop — that's Mode A work and it belongs in its own planning
+   session, not mixed into implementation. Say so.
 2. If a spec and dev plan exist, generate the missing framework artifacts from them, in §7's order,
    presenting each for review.
 3. For an existing codebase: derive `AGENTS.md` architectural rules from the conventions already in
