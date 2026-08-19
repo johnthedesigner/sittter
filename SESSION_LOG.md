@@ -2,29 +2,23 @@
 
 ## Current State
 
-**Phase:** 1 — Persistence and admin authentication — In progress, 1 of 5 tasks complete
-**Next task:** 1.2 — Repositories and the seed fixture
+**Phase:** 1 — Persistence and admin authentication — In progress, 2 of 5 tasks complete
+**Next task:** 1.3 — The email service and its send log
 
-**What's built in Phase 1:** `src/db/schema.ts` (21 tables, 7 enums, 4 check constraints), `src/db/client.ts`, `src/lib/env.ts`, and `drizzle/0000_foamy_marvel_apes.sql` applied to Neon.
+**What's built in Phase 1:** the schema and first migration applied to both Neon branches; 15 repository modules with 71 functions; `src/db/seed.ts`; `src/db/testing/database.ts`; 49 integration tests.
 
-**Database — decided 2026-08-19, one Neon project with two branches:**
+**Test totals:** 206 unit, 49 integration, 0 e2e. `passWithNoTests` is now gone from **both** vitest configs, so a glob broken by a rename fails instead of passing silently.
 
-| Branch | Endpoint | Used by | Configured in |
-|---|---|---|---|
-| `main` | `ep-divine-wave-…us-east-2` | development, `pnpm db:migrate`, `pnpm db:seed` | `.env` |
-| `test` | `ep-sweet-morning-…-pooler.us-east-2` | integration tests | `.env.test` |
+**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration tests, truncated before every test. `src/db/testing/database.ts` refuses to run against anything but the test branch, because these tests truncate all 21 tables and the first symptom of a wrong target would be a confusing empty screen rather than an error.
 
-Rationale: a Neon branch is a copy-on-write clone with its own compute endpoint, so integration tests that truncate tables cannot reach development seed data, and the test branch can be reset to its parent instantly. Two databases inside one branch would share a compute and a connection ceiling; two projects would add credentials without adding isolation. Branch-per-run is also the shape CI uses, so the pattern extends rather than gets rewritten.
+**What Task 1.3 can rely on:**
+- `recordEmailSend(businessId, { kind, recipient, subject, providerId, error })` and `listEmailSends(businessId)` exist and are tested, including the failure shape where `error` is set and `providerId` is null.
+- `findAdminByEmail(businessId, email)` is case-insensitive and returns null for an unregistered address rather than throwing — the caller must not let that difference reach a user.
+- The seeded admin is `jlivornese@gmail.com`. `EMAIL_FROM` is `onboarding@resend.dev`, and Resend's shared sender only delivers to the address owning the API key, so a magic link addressed anywhere else silently never arrives.
 
-**Both branches use `DATABASE_URL` under the same name, in different env files.** `docs/dev-plan.md` §4 lists only `DATABASE_URL` and says every variable appears in `.env.example`; introducing `DATABASE_URL_TEST` would have changed that list. `.env.test` carries the test branch instead, which Task 1.2 must load in `vitest.integration.config.ts`.
-
-**Neon Auth is deliberately OFF.** It provisions its own schema outside the migration chain, which AGENTS.md forbids; `docs/spec.md` §6.2 already specifies email magic link with `admins`, `magic_link_tokens`, and `sessions` defined in dev-plan §5; and customers never sign in, so there is no second surface to justify the vendor. Turning it on later is a spec change, not an implementation choice.
-
-**Two things Task 1.2 must carry:**
-- **`.env` is not loaded automatically outside Next.js.** `drizzle-kit`, `tsx`, and `vitest` all see an empty `process.env` without help. `drizzle.config.ts` now does `import 'dotenv/config'`. `pnpm db:seed` and the integration config will each need the same, and the integration config must load `.env.test` rather than `.env`.
-- `passWithNoTests` comes out of `vitest.integration.config.ts`, and repositories serving customer surfaces must name every column they return.
-
-**`EMAIL_FROM` is `onboarding@resend.dev`.** Resend's shared sender only delivers to the address that owns the API key, so seeded admin emails must use that address or no magic link will arrive in Task 1.5.
+**Two things Task 1.3 must do that this task set up:**
+- **Load `.env` explicitly.** Nothing outside Next.js does. `drizzle.config.ts` uses `import 'dotenv/config'`, `src/db/seed.ts` imports it in `main()`, and `vitest.integration.config.ts` reads `.env.test` and passes it through `test.env`. A new script or config needs the same.
+- **Fake Resend at the module boundary, once, in a shared fixture** — `e2e/fixtures.ts` per the task file. No inline per-test fakes.
 
 **Open decisions the human owns.** None block Phase 1. Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; and the `photos/[id]/route.ts` discrepancy between AGENTS.md and `docs/dev-plan.md` §3.
 

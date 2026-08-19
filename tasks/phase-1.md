@@ -134,8 +134,8 @@ Every table from `docs/dev-plan.md` §5 as Drizzle definitions, the database cli
 
 ### Task 1.2 — Repositories and the seed fixture
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 1.1
 
 **What this task implements:**
@@ -150,19 +150,19 @@ A repository module per table, each function scoped by business, plus a determin
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] Every repository function takes `businessId` as its first argument, including single-row reads by primary key
-- [ ] Every write function has a test that reads the row back and asserts the persisted values, not merely the return value
-- [ ] Every read function has a test that seeds a **second** business and asserts the function does not return its rows
-- [ ] A repository serving a customer surface names every column it returns; `select()` with no column list does not appear in any function reachable from the customer portal, the intake form, or the booking form
-- [ ] `pnpm db:seed` runs against an empty database and produces exactly one business, two admins, two customers, and three bookings
-- [ ] `pnpm db:seed` is idempotent, or fails loudly on a non-empty database — state which, and test it
-- [ ] The three seeded bookings derive `confirmed`, `tentative`, and `inquiry` respectively when passed to `deriveStatus` with the seed's reference date
-- [ ] `grep` for `drizzle-orm` outside `src/db/` returns nothing but `drizzle.config.ts`
-- [ ] `passWithNoTests` removed from `vitest.integration.config.ts`, and `pnpm test:integration` fails if the glob matches nothing
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] Every repository function takes `businessId` as its first argument, including single-row reads by primary key
+- [x] Every write function has a test that reads the row back and asserts the persisted values, not merely the return value
+- [x] Every read function has a test that seeds a **second** business and asserts the function does not return its rows
+- [x] A repository serving a customer surface names every column it returns; `select()` with no column list does not appear in any function reachable from the customer portal, the intake form, or the booking form
+- [x] `pnpm db:seed` runs against an empty database and produces exactly one business, two admins, two customers, and three bookings
+- [x] `pnpm db:seed` is idempotent, or fails loudly on a non-empty database — state which, and test it
+- [x] The three seeded bookings derive `confirmed`, `tentative`, and `inquiry` respectively when passed to `deriveStatus` with the seed's reference date
+- [x] `grep` for `drizzle-orm` outside `src/db/` returns nothing but `drizzle.config.ts`
+- [x] `passWithNoTests` removed from `vitest.integration.config.ts`, and `pnpm test:integration` fails if the glob matches nothing
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not write any service, route handler, or page

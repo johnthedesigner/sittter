@@ -1,18 +1,23 @@
+import { config as loadEnv } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'node:url'
 
-// Integration tests against a real database. Matches nothing until Phase 1.
+// Integration tests run against the Neon `test` branch, never `main`.
+// Nothing outside Next.js loads a .env file on its own, so it is read here
+// explicitly and handed to the test environment. A missing .env.test yields
+// an empty object, and the guard in src/db/testing/database.ts fails loudly
+// rather than letting the suite fall through to some other database.
+const testEnv = loadEnv({ path: '.env.test' }).parsed ?? {}
+
 export default defineConfig({
   test: {
     include: ['src/{db,services}/**/*.test.ts'],
     environment: 'node',
-    // META-PLAN §2 step 12 requires a clean exit with zero tests: the unit
-    // glob is empty until Task 0.1 and the integration glob until Phase 1.
-    // Tradeoff: a glob broken later would pass silently rather than fail.
-    passWithNoTests: true,
+    env: testEnv,
     // Repositories share one database; parallel files would race on fixtures.
     fileParallelism: false,
     testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
