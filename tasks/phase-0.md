@@ -205,8 +205,8 @@ The single function that decides what a booking is called, and the mapping that 
 
 ### Task 0.3 — Pricing engine
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 0.1
 
 **What this task implements:**
@@ -219,20 +219,20 @@ The single function that decides what a booking is called, and the mapping that 
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] The worked example in Reference data produces exactly two line items and a total of 5900, with the stated labels, quantities, and unit amounts
-- [ ] All five component types active on one booking produce five line items in `sortOrder` order
-- [ ] A `per_day` component prices against the day count, which counts every calendar day in the service range inclusively, including days with no visit
-- [ ] A `per_hour` component prices against the summed visit durations in minutes, and produces no line item when every duration is null
-- [ ] A `day_count_override` of 6 against a 7 day range produces a 6 day line item, and `dayCountWasOverridden` is true
-- [ ] A `visit_count_override` behaves equivalently
-- [ ] An ad-hoc line item with a negative amount reduces the total
-- [ ] A booking with zero visits and a `per_visit` component produces no `per_visit` line item, not a zero-amount one
-- [ ] Every returned amount is an integer; no test value is a floating point number
-- [ ] `basis` strings are human-readable and match the format in the worked example
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] The worked example in Reference data produces exactly two line items and a total of 5900, with the stated labels, quantities, and unit amounts
+- [x] All five component types active on one booking produce five line items in `sortOrder` order
+- [x] A `per_day` component prices against the day count, which counts every calendar day in the service range inclusively, including days with no visit
+- [x] A `per_hour` component prices against the summed visit durations in minutes, and produces no line item when every duration is null
+- [x] A `day_count_override` of 6 against a 7 day range produces a 6 day line item, and `dayCountWasOverridden` is true
+- [x] A `visit_count_override` behaves equivalently
+- [x] An ad-hoc line item with a negative amount reduces the total
+- [x] A booking with zero visits and a `per_visit` component produces no `per_visit` line item, not a zero-amount one
+- [x] Every returned amount is an integer; no test value is a floating point number
+- [x] `basis` strings are human-readable and match the format in the worked example
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not format currency for display; formatting happens at the display layer

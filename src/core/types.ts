@@ -205,3 +205,22 @@ export interface DigestModel {
   attention: DigestAttentionItem[]
   isEmpty: boolean
 }
+
+// ── Documented default instance ──────────────────────────────────────
+
+/**
+ * The pricing profile the business launches with.
+ *
+ * From `docs/dev-plan.md` §6.1, which places it in this file alongside the
+ * types. Used as the demo fixture and as the seed value.
+ */
+export const DEFAULT_PRICING_COMPONENTS: PricingComponent[] = [
+  { id: 'default-per-day', type: 'per_day', label: 'Daily rate', amountCents: 500, sortOrder: 0 },
+  {
+    id: 'default-per-visit',
+    type: 'per_visit',
+    label: 'Per visit',
+    amountCents: 600,
+    sortOrder: 1,
+  },
+]

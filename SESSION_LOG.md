@@ -2,13 +2,13 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — In progress, 2 of 6 tasks complete
-**Next task:** 0.3 — Pricing engine
-**What's built:** `src/core/types.ts`, `src/core/dates.ts`, `src/core/status.ts`, `src/core/presentation.ts`. 88 unit tests, all passing. Scaffold and tooling complete. No pricing, no scheduling, no digest, no slug, no demo harness, no database.
+**Phase:** 0 — Pure core — In progress, 3 of 6 tasks complete
+**Next task:** 0.4 — Visit schedule generation
+**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`. 119 unit tests, all passing. Scaffold and tooling complete. No scheduling, no digest, no slug, no demo harness, no database.
 
-**Available to Task 0.3:** every domain type from §6; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive — this is the per-day pricing basis), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`.
+**Available to Task 0.4:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`.
 
-**Note for Task 0.3:** `DEFAULT_PRICING_COMPONENTS` from `docs/dev-plan.md` §6.1 has not been written. It was deliberately left out of Task 0.1 as pricing scope and belongs to this task.
+**Note for Task 0.4:** the cadence anchoring table in `tasks/phase-0.md` Reference data is the specification — offsets counted in days from the service range start, inclusive. Two instructions landing on the same date produce one visit carrying both task identifiers.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
@@ -17,6 +17,50 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.3: Pricing engine
+
+**What was done:**
+- `src/core/pricing.ts` — `priceBooking(input)` returning `PricedBooking`, plus the `PricingInput` shape
+- `src/core/types.ts` — added `DEFAULT_PRICING_COMPONENTS`, deferred from Task 0.1
+- `src/core/pricing.test.ts` — 31 tests
+
+**Decisions made:**
+
+- **`DEFAULT_PRICING_COMPONENTS` went into `types.ts`, not `pricing.ts`.** `docs/dev-plan.md` §6 opens "Defined in `src/core/types.ts`" and §6.1 sits under it. Following the document literally beat the instinct to file it with the engine.
+- **`priceBooking` takes `{ booking, visits, components, adhocItems }`** rather than loose counts. The counts and both overrides already live on `BookingCore`, and passing the booking keeps the override flags impossible to forget.
+- **A component that does not apply produces no line item.** Zero days, zero visits, or no recorded durations means the row is omitted, not emitted at zero. Required by the acceptance criteria for `per_visit`, and applied consistently to `per_day` and `per_hour` — "0 visits at $6.00 — $0.00" is noise on something a customer reads. `flat` and `custom` always have quantity 1 and so are never suppressed.
+- **Ad-hoc items are never suppressed, including negative ones.** A discount or a correction is a deliberate entry; hiding it would be worse than showing it.
+- **Ordering is components by `sortOrder`, then ad-hoc by `sortOrder`.** The task fixes component ordering but says nothing about where ad-hoc items sit. They go last because they adjust a computed price, and an invoice reads the adjustment after the thing it adjusts. Both arrays are copied before sorting, so the caller's arrays are not mutated — there is a test for this.
+- **`per_hour` multiplies before dividing, then rounds once.** `Math.round((minutes * unit) / 60)`. The product is an exact integer; rounding immediately means no float is ever held as money. `quantity` carries fractional hours, which is a count rather than a currency value and is allowed to be fractional.
+- **An override does not change the minutes a `per_hour` component sees.** Overrides adjust billed counts; the summed durations are what actually happened. Tested.
+
+**A tension worth naming, and why it is not a violation.**
+
+AGENTS.md says formatting to dollars "happens only at the point of display", and this module produces `basis` strings containing "$5.00". That is not a breach: `docs/dev-plan.md` §6 defines `basis` as exactly that display artifact, with the same example. The rule's substance — that no floating point arithmetic touches a currency value — is preserved. `formatDollars` uses `Math.floor(cents / 100)` and `cents % 100` on integers and never divides into a float, which is also why 1999 cents renders "$19.99" rather than "$19.990000000000002". There is a test asserting exactly that.
+
+**Not done:**
+- **No currency formatting for display beyond `basis`.** The must-not-do list forbids it; a surface formats `amountCents` itself.
+- **No snapshot logic.** When a price is frozen is Phase 2 service concern.
+- **Nothing from Tasks 0.4 through 0.6** — no scheduling, digest, slug, or demo harness.
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 119 tests, 4 files, 250 ms |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Coverage, `pricing.ts` | 100% statements, 96.77% branches, 100% functions |
+| Coverage, all of `src/core/` | 98.78% statements, 97.45% branches, 100% functions |
+
+The worked example is asserted field by field: two line items, `'7 days at $5.00'` at quantity 7 and unit 500 for 3500, `'4 visits at $6.00'` at quantity 4 and unit 600 for 2400, total 5900.
+
+---
 
 ## 2026-08-19 — Task 0.2: Status derivation and customer-facing presentation
 
