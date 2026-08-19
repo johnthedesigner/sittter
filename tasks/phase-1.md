@@ -214,8 +214,8 @@ A repository module per table, each function scoped by business, plus a determin
 
 ### Task 1.4 — Magic link issue and consume
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 1.3
 
 **What this task implements:**
@@ -229,21 +229,21 @@ A repository module per table, each function scoped by business, plus a determin
 **Journey steps enabled:** none directly — 8.1.2 through 8.1.5 become testable end to end in Task 1.5.
 
 **Acceptance criteria:**
-- [ ] Tokens are generated with `node:crypto` `randomBytes`, 32 bytes, base64url encoded; `Math.random()` appears nowhere in the auth path
-- [ ] Only a SHA-256 hash is stored; a test asserts the plaintext token does not appear in any column of `magic_link_tokens` or `sessions`
-- [ ] An expired token fails closed — a test advances past 15 minutes and asserts consumption fails
-- [ ] A consumed token fails on second use — a test consumes twice and asserts the second attempt fails (journey step 8.1.4)
-- [ ] A token for an email that is not a registered admin is never issued, and `issueMagicLink` returns the same result shape as a successful issue so the caller cannot leak the difference (journey step 8.1.5)
-- [ ] A token belonging to a deleted admin fails closed rather than throwing
-- [ ] A tampered token — a valid-looking string that hashes to nothing stored — fails closed
-- [ ] `verifySession` rejects an expired session, and a test asserts it
-- [ ] The session cookie is `httpOnly`, `secure`, and `sameSite: 'lax'`, asserted in a test rather than read off the source
-- [ ] `consumeMagicLink` sets `admins.last_seen_at`
-- [ ] Every function takes the current instant as an argument rather than reading a clock, so expiry is testable without waiting
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] Tokens are generated with `node:crypto` `randomBytes`, 32 bytes, base64url encoded; `Math.random()` appears nowhere in the auth path
+- [x] Only a SHA-256 hash is stored; a test asserts the plaintext token does not appear in any column of `magic_link_tokens` or `sessions`
+- [x] An expired token fails closed — a test advances past 15 minutes and asserts consumption fails
+- [x] A consumed token fails on second use — a test consumes twice and asserts the second attempt fails (journey step 8.1.4)
+- [x] A token for an email that is not a registered admin is never issued, and `issueMagicLink` returns the same result shape as a successful issue so the caller cannot leak the difference (journey step 8.1.5)
+- [x] A token belonging to a deleted admin fails closed rather than throwing
+- [x] A tampered token — a valid-looking string that hashes to nothing stored — fails closed
+- [x] `verifySession` rejects an expired session, and a test asserts it
+- [x] The session cookie is `httpOnly`, `secure`, and `sameSite: 'lax'`, asserted in a test rather than read off the source
+- [x] `consumeMagicLink` sets `admins.last_seen_at`
+- [x] Every function takes the current instant as an argument rather than reading a clock, so expiry is testable without waiting
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not build any page or route handler — that is Task 1.5

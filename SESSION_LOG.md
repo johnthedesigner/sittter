@@ -2,26 +2,28 @@
 
 ## Current State
 
-**Phase:** 1 — Persistence and admin authentication — In progress, 3 of 5 tasks complete
-**Next task:** 1.4 — Magic link issue and consume
+**Phase:** 1 — Persistence and admin authentication — In progress, 4 of 5 tasks complete
+**Next task:** 1.5 — Sign-in surface and the session guard — **the last task in Phase 1**
 
-**What's built in Phase 1:** schema and migration on both Neon branches; 15 repository modules, 71 functions; `src/db/seed.ts`; `src/services/email.ts`; `src/emails/layout.tsx` and `magic-link.tsx`; the shared Resend fake.
+**What's built in Phase 1:** schema and migration on both Neon branches; 15 repository modules, 71 functions; the seed; the email service and templates; `src/services/auth.ts` and `src/lib/session.ts`.
 
-**Test totals:** 206 unit, 66 integration, 0 e2e.
+**Test totals:** 206 unit, 100 integration, 0 e2e.
 
-**What Task 1.4 can rely on:**
-- `sendEmail(businessId, { kind, to, subject, body })` returns `{ ok, providerId, error, attempts }` and **never throws**. It retries exactly once and writes one `email_sends` row describing the final outcome.
-- `MagicLinkEmail({ signInUrl })` and `MAGIC_LINK_COPY` — the copy is exported from the template so a test asserts the same strings the template renders.
-- `findAdminByEmail(businessId, email)` is case-insensitive and returns null for an unregistered address.
-- Auth repository functions exist and are tested: `createMagicLinkToken`, `findLiveMagicLinkToken`, `consumeMagicLinkToken`, `createSession`, `findSession`, `deleteSession`. Each takes `businessId` first and joins through `admins` to enforce it. **Expiry is deliberately not checked in the repository** — the caller compares against an instant it is given, so Task 1.4 can test expiry without waiting.
+**What Task 1.5 can rely on:**
+- `issueMagicLink(businessId, email, now)` → always `{ requested: true }`, whether or not the address is registered, whether or not delivery succeeded. **The route must return the same response in every case.**
+- `consumeMagicLink(businessId, token, now)` → `{ admin, sessionToken } | null`. Null covers expired, consumed, tampered, unknown, wrong business, and admin-since-deleted. **One message for all of them.**
+- `verifySession(businessId, sessionToken, now)` → `Admin | null`. Null covers expired and unknown alike.
+- `destroySession(businessId, sessionToken)` → boolean.
+- `SESSION_COOKIE_NAME`, `SESSION_COOKIE_OPTIONS`, `readSessionCookie`, `writeSessionCookie`, `clearSessionCookie` in `src/lib/session.ts`.
+- `getOnlyBusiness()` resolves the V1 business, which every call above needs first.
 
-**A deviation from `tasks/phase-1.md` worth knowing:** the task listed `e2e/fixtures.ts` as the home for the shared vendor fake. It lives at `src/services/testing/resend-fake.ts` instead — `e2e/` is Playwright's directory and a Vitest module mock does not belong there. `e2e/fixtures.ts` is created in Task 1.5, where Playwright actually needs it; writing it empty now would have been a placeholder, which AGENTS.md forbids. The substance of the requirement — the vendor faked once, in a shared fixture, not inline per test — is met.
-
-**Vitest needed a JSX transform override.** `tsconfig.json` sets `jsx: "preserve"` because Next requires it, and Vite 8 reads that directly, failing on `.tsx` with "content contains invalid JS syntax". `vitest.integration.config.ts` now sets `oxc: { jsx: { runtime: 'automatic' } }`. Note the option is `oxc`, not `esbuild` — Vite 8 replaced esbuild with oxc and silently ignores the old key.
+**Notes for Task 1.5:**
+- The cookie is `sameSite: 'lax'` deliberately. `'strict'` drops the cookie on the cross-site navigation from a mail client, and sign-in would appear to silently fail.
+- `e2e/fixtures.ts` is created in this task — it was deferred from 1.3 because `e2e/` is Playwright's directory and the Vitest vendor fake lives at `src/services/testing/resend-fake.ts` instead.
+- `pnpm build` is a Task 1.5 criterion and has not been run yet in this project. Budget for first-build surprises.
+- Playwright will need the app running and a seeded database. The `main` branch is seeded; the admin address is `jlivornese@gmail.com`.
 
 **Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration tests. `src/db/testing/database.ts` refuses any other target.
-
-**`EMAIL_FROM` is `onboarding@resend.dev`.** Resend's shared sender only delivers to the address owning the API key, so the seeded admin is `jlivornese@gmail.com`. A magic link addressed anywhere else silently never arrives — which will matter when Task 1.5 is exercised by hand.
 
 **Open decisions the human owns.** None block Phase 1. Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; and the `photos/[id]/route.ts` discrepancy between AGENTS.md and `docs/dev-plan.md` §3.
 
