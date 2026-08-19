@@ -94,8 +94,8 @@ Every repository function takes `businessId` as its **first** argument, without 
 
 ### Task 1.1 — Schema, client, and the first migration
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** none
 
 **What this task implements:**
@@ -111,17 +111,17 @@ Every table from `docs/dev-plan.md` §5 as Drizzle definitions, the database cli
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] Every table in `docs/dev-plan.md` §5 exists in `src/db/schema.ts` with matching column names, types, nullability, defaults, and unique constraints
-- [ ] Every money column is an integer type; no `numeric`, `real`, or `float` column holds a currency value
-- [ ] Every calendar date column is `date`; every instant column is `timestamptz`. Specifically: `bookings.start_date`, `bookings.end_date`, `bookings.paid_at`, `visits.date`, `visit_logs.logged_date`, `observed_weather.observed_date`, and `digest_sends.send_date` are `date`, while `created_at`, `dates_firm_at`, and `synced_at` are `timestamptz`
-- [ ] `pnpm db:generate` produces a migration, and the generated SQL is read and confirmed to match the schema before committing
-- [ ] `pnpm db:migrate` applies cleanly to an empty database
-- [ ] Applying the migration twice is safe — the second run reports nothing to apply rather than failing
-- [ ] `src/lib/env.ts` throws a named error listing the missing variable when `DATABASE_URL` is absent, rather than failing later with a connection error
-- [ ] No file in `drizzle/` has been hand-edited
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] Every table in `docs/dev-plan.md` §5 exists in `src/db/schema.ts` with matching column names, types, nullability, defaults, and unique constraints
+- [x] Every money column is an integer type; no `numeric`, `real`, or `float` column holds a currency value
+- [x] Every calendar date column is `date`; every instant column is `timestamptz`. Specifically: `bookings.start_date`, `bookings.end_date`, `bookings.paid_at`, `visits.date`, `visit_logs.logged_date`, `observed_weather.observed_date`, and `digest_sends.send_date` are `date`, while `created_at`, `dates_firm_at`, and `synced_at` are `timestamptz`
+- [x] `pnpm db:generate` produces a migration, and the generated SQL is read and confirmed to match the schema before committing
+- [x] `pnpm db:migrate` applies cleanly to an empty database
+- [x] Applying the migration twice is safe — the second run reports nothing to apply rather than failing
+- [x] `src/lib/env.ts` throws a named error listing the missing variable when `DATABASE_URL` is absent, rather than failing later with a connection error
+- [x] No file in `drizzle/` has been hand-edited
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not write any repository function — that is Task 1.2

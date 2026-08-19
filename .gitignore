@@ -1,11 +1,16 @@
 node_modules
 .next
-.env
-.env.local
 coverage
 playwright-report
 test-results
 .DS_Store
+
+# Every .env variant, not just the two that existed when this was written.
+# .env.test was created later and would have been committed with a live Neon
+# credential in it. Ignore the family, then allow the checked-in example.
+.env
+.env.*
+!.env.example
 
 # Service account JSON keys, in case one is ever downloaded into the repo.
 # A committed private key means revoking it and issuing a new one.
