@@ -4,18 +4,77 @@
 
 **Phase:** 0 — Pure core — Not started
 **Next task:** 0.1 — Domain types and calendar date arithmetic
-**What's built:** No application code. The planning package is version-controlled (`docs/spec.md`, `docs/dev-plan.md`, `docs/plan-summary.md`, `docs/user-journeys.md`, `AGENTS.md`, `tasks/TEMPLATE.md`, `tasks/phase-0.md`, `docs/META-PLAN.md`). Two throwaway pre-flight scripts exist under `scripts/spike/`. No scaffold, no database, no `package.json`.
+**What's built:** Scaffold only. No application code — every directory under `src/` is empty. Structure, configuration, and tooling per `docs/dev-plan.md` §3, plus two throwaway pre-flight scripts under `scripts/spike/`. No database, no schema, no migrations.
 
-**Gate status before Task 0.1:**
+**Gate status before Task 0.1: both gates closed. Task 0.1 may begin.**
 
-1. ~~Pre-flight spikes~~ — **complete.** Both assumptions hold. See the entry below. One consequence for Phase 5 needs a human decision; it does not block Phase 0.
-2. Scaffold session per `docs/META-PLAN.md` §2 — **not started.** This is the remaining gate. Task 0.1 cannot begin until type check, lint, and both test runners verify cleanly, including the deliberate `src/core/violation.ts` proving the `no-restricted-imports` rule actually fires.
+1. ~~Pre-flight spikes~~ — complete, both assumptions hold.
+2. ~~Scaffold session~~ — complete. `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`, and `prettier --check` all pass. The `src/core/` boundary rule was proved to fire before being trusted.
 
-**Open questions:** Three deferred items in `docs/spec.md` §10, each with a review trigger, not to be resolved during implementation. Spike 1 raised a fourth, about calendar onboarding; it was **resolved by the human on 2026-08-19** and is no longer open. See the decision recorded in the entry below.
+**Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned — see below), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
+
+**Open questions:** Three deferred items in `docs/spec.md` §10, each with a review trigger, not to be resolved during implementation. The Phase 5 calendar-onboarding question raised by Spike 1 was resolved by the human on 2026-08-19. Two new items need a human decision before the phases that depend on them — **the Vercel cron schedule (Phase 6)** and **the TypeScript 6 pin (any phase)** — both recorded in the scaffold entry below. Neither blocks Phase 0.
 
 ---
 
 ## Session entries
+
+## 2026-08-19 — Scaffold session
+
+Per `docs/META-PLAN.md` §2. Structure, configuration, and tooling only. No application code was written; `find src -type f` returns nothing but `.gitkeep` files.
+
+**What was done:**
+- Full directory tree from `docs/dev-plan.md` §3, with `.gitkeep` in each empty directory so git tracks them
+- `package.json` — pnpm project, all 14 required scripts, runtime and development dependencies as listed in META-PLAN §2 step 2
+- `tsconfig.json` — strict, `noUncheckedIndexedAccess`, `@/*` → `src/*`
+- `eslint.config.mjs` — one flat config for the whole repository, carrying the `src/core/` boundary rule
+- `.prettierrc`, `.prettierignore`
+- `vitest.config.ts` (unit, `src/core/**/*.test.ts`, v8 coverage), `vitest.integration.config.ts` (`src/{db,services}/**/*.test.ts`)
+- `playwright.config.ts` — `e2e/`, base URL `http://localhost:3000`
+- `next.config.ts`, `tailwind.config.ts`, `postcss.config.mjs`, `drizzle.config.ts`, `vercel.json`
+- `.env.example` — every variable from `docs/dev-plan.md` §4, grouped by phase, each commented
+- `README.md`
+- `.gitignore` extended with `next-env.d.ts` and build info files
+
+**The boundary rule was proved before being trusted.** A temporary `src/core/violation.ts` importing `react` and `@/db/client` and calling `Date.now()` and `Math.random()` produced four errors and a non-zero exit. It was re-proved after every subsequent config change, then deleted. The rule covers more than the prompt required: the forbidden import list, plus `no-restricted-properties` on `Date.now` and `Math.random` and `no-restricted-globals` on `process`, because AGENTS.md forbids reading a clock, randomness, or the environment from `src/core/` and an import rule alone would not catch those.
+
+**Decisions made — each forced, none discretionary:**
+
+- **TypeScript pinned to 6.0.3.** TS 7.0.2 resolves by default, and `typescript-eslint` 8.67 refuses to load against it: *"typescript-eslint does not support TS 7.0."* That would have left the `src/core/` boundary unenforced, which AGENTS.md treats as the most serious failure available in this project. The lint rule outranks the compiler version. **Needs a human decision eventually** — revisit when typescript-eslint ships TS 7 support; there is no urgency.
+- **`baseUrl` omitted from tsconfig.** Deprecated in TS 6 and a hard error under default settings. `paths` resolves relative to the tsconfig without it.
+- **Tailwind pinned to 3.4.19.** META-PLAN §2 lists `postcss` and `autoprefixer`, and `docs/dev-plan.md` §3 lists `tailwind.config.ts` — that is the v3 shape. Tailwind 4 replaces all three with a CSS-first config and no config file, which would contradict the documented structure. Flagged rather than resolved.
+- **`passWithNoTests` on both Vitest configs and `--pass-with-no-tests` on Playwright.** Step 12 requires each runner to exit cleanly with zero tests; all three exit 1 on an empty glob otherwise. Tradeoff, recorded because it will matter later: once Phase 0 has tests, a glob broken by a rename would pass silently rather than fail.
+- **Prettier ignores `AGENTS.md`, `SESSION_LOG.md`, `docs/`, `tasks/`, `logs/`.** It reflows markdown tables and wrapping, and `--list-different` showed it would rewrite all seven planning documents on first run. Those are authored prose maintained by hand; churning them would bury real edits in diff noise.
+- **`pnpm-workspace.yaml` with `allowBuilds`.** pnpm 11 no longer reads build-script approval from `package.json`'s `onlyBuiltDependencies`. Until this was right, esbuild never unpacked and every `pnpm test:unit` failed inside a pre-flight `pnpm install` rather than in the test runner — the error named `pnpm install`, not esbuild, and not vitest.
+- **`src/app/api/photos/[id]/` created.** Listed in the AGENTS.md repository structure but absent from `docs/dev-plan.md` §3. AGENTS.md wins by its own conflict rule, and Phase 4 needs the route. **The two documents should be reconciled.**
+- **`vercel.json` cron set to `0 11 * * *` (daily, ~07:00 America/New_York during EDT).** See below — this one needs a decision.
+
+**Needs a human decision before Phase 6 — the cron schedule.**
+
+AGENTS.md describes the daily job as one that "checks that the current local hour matches the business's configured digest hour and returns without acting if it does not." That design implies the job is invoked more often than once a day — otherwise the hour check has nothing to guard. But **Vercel Hobby restricts cron to one invocation per day**, and Hobby is the plan this project targets (Spike 2 exists to fit its function timeout).
+
+A fixed daily UTC cron also drifts an hour against `America/New_York` across the DST boundary, so a digest configured for 07:00 local will fire at 08:00 local for part of the year. The schedule is currently set to a single daily run that is correct during EDT. Resolving this properly is a Phase 6 planning decision — hourly invocation on Pro, accepting the DST drift, or two seasonal schedules. Not resolved here.
+
+**Not done:**
+- **No application code.** Not a single `.ts` file under `src/`. No `src/app/layout.tsx` or `page.tsx`, so `pnpm build` was deliberately not run — it has nothing to build, and building was not among step 12's verifications.
+- **No `pnpm db:generate` or database connection.** Phase 1.
+- **`docs/spec.md` §5.12 not reconciled** with the two-step calendar onboarding finding. Phase 5 planning.
+- **Task 0.1 not started.** META-PLAN §2 ends "Do not proceed to Phase 0 task work."
+
+**Verification** — run separately, each reported on its own:
+
+| Command | Result |
+|---|---|
+| `pnpm typecheck` | PASS, zero errors |
+| `pnpm lint` | PASS, zero errors |
+| `pnpm test:unit` | PASS, zero tests, exit 0 |
+| `pnpm test:integration` | PASS, zero tests, exit 0 |
+| `pnpm test:e2e` | PASS, zero tests, exit 0, Chromium 151.0.7922.34 installed |
+| `prettier --check .` | PASS |
+| `src/core/` boundary rule on a deliberate violation | 4 errors, exit 1 — **rule fires** |
+| Spike scripts still run after reformat | PASS, 628 ms dry run |
+
+---
 
 ## 2026-08-19 — Pre-flight risk validation: Spikes 1 and 2
 
