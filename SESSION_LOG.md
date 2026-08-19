@@ -2,27 +2,30 @@
 
 ## Current State
 
-**Phase:** 1 — Persistence and admin authentication — In progress, 2 of 5 tasks complete
-**Next task:** 1.3 — The email service and its send log
+**Phase:** 1 — Persistence and admin authentication — In progress, 3 of 5 tasks complete
+**Next task:** 1.4 — Magic link issue and consume
 
-**What's built in Phase 1:** the schema and first migration applied to both Neon branches; 15 repository modules with 71 functions; `src/db/seed.ts`; `src/db/testing/database.ts`; 49 integration tests.
+**What's built in Phase 1:** schema and migration on both Neon branches; 15 repository modules, 71 functions; `src/db/seed.ts`; `src/services/email.ts`; `src/emails/layout.tsx` and `magic-link.tsx`; the shared Resend fake.
 
-**Test totals:** 206 unit, 49 integration, 0 e2e. `passWithNoTests` is now gone from **both** vitest configs, so a glob broken by a rename fails instead of passing silently.
+**Test totals:** 206 unit, 66 integration, 0 e2e.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration tests, truncated before every test. `src/db/testing/database.ts` refuses to run against anything but the test branch, because these tests truncate all 21 tables and the first symptom of a wrong target would be a confusing empty screen rather than an error.
+**What Task 1.4 can rely on:**
+- `sendEmail(businessId, { kind, to, subject, body })` returns `{ ok, providerId, error, attempts }` and **never throws**. It retries exactly once and writes one `email_sends` row describing the final outcome.
+- `MagicLinkEmail({ signInUrl })` and `MAGIC_LINK_COPY` — the copy is exported from the template so a test asserts the same strings the template renders.
+- `findAdminByEmail(businessId, email)` is case-insensitive and returns null for an unregistered address.
+- Auth repository functions exist and are tested: `createMagicLinkToken`, `findLiveMagicLinkToken`, `consumeMagicLinkToken`, `createSession`, `findSession`, `deleteSession`. Each takes `businessId` first and joins through `admins` to enforce it. **Expiry is deliberately not checked in the repository** — the caller compares against an instant it is given, so Task 1.4 can test expiry without waiting.
 
-**What Task 1.3 can rely on:**
-- `recordEmailSend(businessId, { kind, recipient, subject, providerId, error })` and `listEmailSends(businessId)` exist and are tested, including the failure shape where `error` is set and `providerId` is null.
-- `findAdminByEmail(businessId, email)` is case-insensitive and returns null for an unregistered address rather than throwing — the caller must not let that difference reach a user.
-- The seeded admin is `jlivornese@gmail.com`. `EMAIL_FROM` is `onboarding@resend.dev`, and Resend's shared sender only delivers to the address owning the API key, so a magic link addressed anywhere else silently never arrives.
+**A deviation from `tasks/phase-1.md` worth knowing:** the task listed `e2e/fixtures.ts` as the home for the shared vendor fake. It lives at `src/services/testing/resend-fake.ts` instead — `e2e/` is Playwright's directory and a Vitest module mock does not belong there. `e2e/fixtures.ts` is created in Task 1.5, where Playwright actually needs it; writing it empty now would have been a placeholder, which AGENTS.md forbids. The substance of the requirement — the vendor faked once, in a shared fixture, not inline per test — is met.
 
-**Two things Task 1.3 must do that this task set up:**
-- **Load `.env` explicitly.** Nothing outside Next.js does. `drizzle.config.ts` uses `import 'dotenv/config'`, `src/db/seed.ts` imports it in `main()`, and `vitest.integration.config.ts` reads `.env.test` and passes it through `test.env`. A new script or config needs the same.
-- **Fake Resend at the module boundary, once, in a shared fixture** — `e2e/fixtures.ts` per the task file. No inline per-test fakes.
+**Vitest needed a JSX transform override.** `tsconfig.json` sets `jsx: "preserve"` because Next requires it, and Vite 8 reads that directly, failing on `.tsx` with "content contains invalid JS syntax". `vitest.integration.config.ts` now sets `oxc: { jsx: { runtime: 'automatic' } }`. Note the option is `oxc`, not `esbuild` — Vite 8 replaced esbuild with oxc and silently ignores the old key.
+
+**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration tests. `src/db/testing/database.ts` refuses any other target.
+
+**`EMAIL_FROM` is `onboarding@resend.dev`.** Resend's shared sender only delivers to the address owning the API key, so the seeded admin is `jlivornese@gmail.com`. A magic link addressed anywhere else silently never arrives — which will matter when Task 1.5 is exercised by hand.
 
 **Open decisions the human owns.** None block Phase 1. Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; and the `photos/[id]/route.ts` discrepancy between AGENTS.md and `docs/dev-plan.md` §3.
 
-**Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, drizzle-kit 0.31.10, Neon Postgres.
+**Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
 **Open questions in the spec:** the three deferred items in `docs/spec.md` §10 remain open and are not to be resolved during implementation.
 

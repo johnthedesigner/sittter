@@ -19,6 +19,12 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 30_000,
   },
+  // tsconfig sets jsx: "preserve", which Next requires and which Vite reads
+  // directly — leaving JSX untransformed and failing as "content contains
+  // invalid JS syntax". Email templates under src/emails/ are .tsx and are
+  // rendered inside these tests, so the setting is overridden for the test
+  // transform only. Path aliases still come from resolve.alias below.
+  oxc: { jsx: { runtime: 'automatic' } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

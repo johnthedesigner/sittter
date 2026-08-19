@@ -174,8 +174,8 @@ A repository module per table, each function scoped by business, plus a determin
 
 ### Task 1.3 — The email service and its send log
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 1.2
 
 **What this task implements:**
@@ -186,23 +186,23 @@ A repository module per table, each function scoped by business, plus a determin
 - `src/emails/layout.tsx` — shared email shell
 - `src/emails/magic-link.tsx` — per the Reference data copy
 - `src/services/email.test.ts` — integration tests with Resend faked at the module boundary
-- `e2e/fixtures.ts` — the shared vendor fake, created here since this is the first vendor
+- ~~`e2e/fixtures.ts`~~ → `src/services/testing/resend-fake.ts` — the shared vendor fake. `e2e/` is Playwright's directory and a Vitest module mock does not belong there; `e2e/fixtures.ts` is created in Task 1.5 when Playwright actually needs it. Writing it empty now would be a placeholder, which AGENTS.md forbids.
 
 **Journey steps enabled:** none directly — this is what makes 8.1.2 possible in Task 1.4.
 
 **Acceptance criteria:**
-- [ ] `src/services/email.ts` is the only file importing `resend`; `grep` confirms it
-- [ ] A successful send writes an `email_sends` row with `kind`, `recipient`, `subject`, and the provider's identifier
-- [ ] A failed send writes an `email_sends` row with `error` populated and `provider_id` null
-- [ ] A failed send is retried exactly once, and a test asserts the provider was called twice
-- [ ] A send that fails twice does **not** throw to its caller; it returns a result the caller can inspect
-- [ ] The magic link email renders with every string from the Reference data table, asserted exactly
-- [ ] The rendered email contains an absolute URL built from `APP_URL`, with no trailing double slash
-- [ ] The Resend fake is defined once, in a shared fixture, not inline per test
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] `src/services/email.ts` is the only file importing `resend`; `grep` confirms it
+- [x] A successful send writes an `email_sends` row with `kind`, `recipient`, `subject`, and the provider's identifier
+- [x] A failed send writes an `email_sends` row with `error` populated and `provider_id` null
+- [x] A failed send is retried exactly once, and a test asserts the provider was called twice
+- [x] A send that fails twice does **not** throw to its caller; it returns a result the caller can inspect
+- [x] The magic link email renders with every string from the Reference data table, asserted exactly
+- [x] The rendered email contains an absolute URL built from `APP_URL`, with no trailing double slash
+- [x] The Resend fake is defined once, in a shared fixture, not inline per test
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not import `resend` anywhere else, now or later
