@@ -123,239 +123,55 @@ Timeline summaries truncate a visit note to a maximum of 60 characters, cutting 
 
 ---
 
-## Tasks
+## Tasks — all complete, compressed at the Phase 0 housekeeping session
 
-### Task 0.1 — Domain types and calendar date arithmetic
+Full bodies, acceptance criteria, and must-not-do lists are in the git history at commit `54ed85a` and earlier. Session detail is in `logs/phase-0.md`.
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** none
+### Task 0.1 — Domain types and calendar date arithmetic ✓
 
-**What this task implements:**
-The complete type vocabulary for the domain, and a set of calendar date functions that operate on `'YYYY-MM-DD'` strings without ever constructing a `Date` object for arithmetic. Everything later in this phase depends on both.
-
-**Files to create or modify:**
-- `src/core/types.ts` — all types from `docs/dev-plan.md` §6, including the `CalendarDate` branded string type
-- `src/core/dates.ts` — `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween`, `expandRange`, `isWithinRange`, `compareDates`, `todayIn`
-- `src/core/dates.test.ts` — tests for the above
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] `expandRange('2026-08-01', '2026-08-07')` returns exactly seven date strings, inclusive of both ends
-- [x] `daysBetween('2026-08-01', '2026-08-07')` returns 7, counting inclusively, matching the per-day pricing basis
-- [x] `addDays('2026-08-31', 1)` returns `'2026-09-01'`
-- [x] `expandRange('2026-03-07', '2026-03-09')` returns exactly three dates, unaffected by the daylight saving transition inside that span
-- [x] `expandRange('2026-11-01', '2026-11-01')` returns exactly one date
-- [x] `expandRange` with an end date before the start date returns an empty array rather than throwing
-- [x] `isValidCalendarDate('2026-02-30')` returns false
-- [x] `todayIn(timezone, now)` takes an explicit instant as an argument and reads no clock
-- [x] No function in `src/core/dates.ts` calls `Date.now()`, `new Date()` with no argument, or reads a timezone from the environment
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not implement status derivation, pricing, scheduling, or digests — those are Tasks 0.2 through 0.5
-- Does not add a date library dependency; this is arithmetic on `'YYYY-MM-DD'` strings
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/types.ts` (the full §6 vocabulary, including the branded `CalendarDate`) and `src/core/dates.ts` (`toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween`, `expandRange`, `isWithinRange`, `compareDates`, `todayIn`), with 41 tests.
+**Key decisions:** No `Date` object appears in the calendar arithmetic — integer day numbers via Hinnant's `days_from_civil`, which makes the daylight-saving criteria pass by construction. `todayIn` is the sole exception and uses `Intl`, because only the zone database knows the offset at an instant. `daysBetween` counts inclusively (7, not 6) as the per-day pricing basis, and returns 0 for an inverted range to agree with `expandRange`. The brand is not exported, so `toCalendarDate` is the only way to make one.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
-### Task 0.2 — Status derivation and customer-facing presentation
+### Task 0.2 — Status derivation and customer-facing presentation ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 0.1
-
-**What this task implements:**
-The single function that decides what a booking is called, and the mapping that translates it into the language a customer sees. Every surface in the product will read from these.
-
-**Files to create or modify:**
-- `src/core/status.ts` — `deriveStatus(booking, today)`
-- `src/core/presentation.ts` — `toCustomerFacingStatus(status, booking)`, `truncateNote(note, maxLength)`
-- `src/core/status.test.ts` — tests for derivation
-- `src/core/presentation.test.ts` — tests for mapping and truncation
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] Every row of the derivation table in Reference data has at least one test asserting the exact resulting status
-- [x] A cancelled booking with both confirmation flags set and dates in the future derives `cancelled`, proving precedence
-- [x] A declined booking with a past end date and a paid date derives `declined`, proving precedence
-- [x] A booking with a start date but no end date derives `inquiry`
-- [x] A booking whose range includes today, with both flags set, derives `in_progress`
-- [x] A booking whose end date is yesterday, with both flags set and no paid date, derives `complete`
-- [x] Every row of the customer-facing mapping table has a test asserting the exact label
-- [x] `truncateNote` on a 60-character note returns it unchanged with no ellipsis
-- [x] `truncateNote` on a 90-character note returns at most 60 characters plus `…`, cut at a word boundary
-- [x] `deriveStatus` takes today as an argument and reads no clock
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not add a `status` field to any type as stored data; status is computed on demand
-- Does not implement pricing or scheduling — those are Tasks 0.3 and 0.4
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/status.ts` (`deriveStatus`) and `src/core/presentation.ts` (`toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`), with 47 tests.
+**Key decisions:** `deriveStatus` is eight sequential branches in the derivation table's order — the order *is* the specification, carrying precedence the individual conditions do not. `CUSTOMER_FACING_LABELS` was added beyond the named API because the criteria assert exact labels and the strings needed one home. `toCustomerFacingStatus` takes the booking as a required argument so pointing at the wrong party cannot happen silently. `truncateNote` had a real defect caught by a spec-first test: a note breaking exactly on a word boundary lost its last whole word.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
-### Task 0.3 — Pricing engine
+### Task 0.3 — Pricing engine ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 0.1
-
-**What this task implements:**
-`priceBooking()`, which turns a set of pricing components, ad-hoc line items, and counts into an itemized list and a total in integer cents.
-
-**Files to create or modify:**
-- `src/core/pricing.ts` — `priceBooking(input)` returning `PricedBooking`
-- `src/core/pricing.test.ts` — tests
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] The worked example in Reference data produces exactly two line items and a total of 5900, with the stated labels, quantities, and unit amounts
-- [x] All five component types active on one booking produce five line items in `sortOrder` order
-- [x] A `per_day` component prices against the day count, which counts every calendar day in the service range inclusively, including days with no visit
-- [x] A `per_hour` component prices against the summed visit durations in minutes, and produces no line item when every duration is null
-- [x] A `day_count_override` of 6 against a 7 day range produces a 6 day line item, and `dayCountWasOverridden` is true
-- [x] A `visit_count_override` behaves equivalently
-- [x] An ad-hoc line item with a negative amount reduces the total
-- [x] A booking with zero visits and a `per_visit` component produces no `per_visit` line item, not a zero-amount one
-- [x] Every returned amount is an integer; no test value is a floating point number
-- [x] `basis` strings are human-readable and match the format in the worked example
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not format currency for display; formatting happens at the display layer
-- Does not decide when a snapshot is taken; that is Phase 2 service logic
-- Does not implement scheduling — that is Task 0.4
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/pricing.ts` (`priceBooking`) plus `DEFAULT_PRICING_COMPONENTS` in `types.ts`, with 31 tests. The worked example is asserted field by field at 5900 cents.
+**Key decisions:** A component that does not apply produces no line item rather than a zero-amount one. Ad-hoc items are never suppressed, negative ones included. `per_hour` multiplies in integer cents before dividing and rounds once, so no float is ever held as money; `formatDollars` uses integer division and modulo. `basis` strings contain dollars, which reads against the AGENTS.md display rule but is exactly what `docs/dev-plan.md` §6 defines — recorded rather than silently resolved.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
-### Task 0.4 — Visit schedule generation
+### Task 0.4 — Visit schedule generation ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 0.1
-
-**What this task implements:**
-`generateVisits()`, which turns a service range and a set of care instructions into a list of dated visits, collapsing instructions that fall on the same date into one visit.
-
-**Files to create or modify:**
-- `src/core/schedule.ts` — `generateVisits({ startDate, endDate, instructions })` returning `ScheduleResult`
-- `src/core/schedule.test.ts` — tests
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] `every_day` over a 7 day range produces 7 visits
-- [x] `every_other_day` over an 8 day range produces 4 visits, on offsets 0, 2, 4, 6
-- [x] `every_other_day` over a 7 day range produces 4 visits, on offsets 0, 2, 4, 6
-- [x] `every_third_day` over a 7 day range produces 3 visits, on offsets 0, 3, 6
-- [x] `once_at_start` produces exactly one visit on the start date
-- [x] `once_at_end` produces exactly one visit on the end date
-- [x] `as_needed` and `custom` produce no visits and appear in `skippedInstructions` with a stated reason
-- [x] A daily cat instruction and an every-other-day plant instruction over a 7 day range produce 7 visits, of which 4 carry both task identifiers and 3 carry one
-- [x] A single-day range with `once_at_start` and `once_at_end` produces exactly one visit carrying both task identifiers
-- [x] Returned visits are sorted ascending by date with no duplicate dates
-- [x] An empty instruction list produces zero visits and does not throw
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not decide what happens to existing visits on regeneration; that preservation logic is Phase 2 service work
-- Does not assign time windows; generated visits default to `anytime` at the service layer
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/schedule.ts` (`generateVisits`), with 24 tests. Every row of the cadence anchoring table has a test asserting the exact dates, not merely the count.
+**Key decisions:** The three stepping cadences are one branch parameterized by step, not three near-identical loops. Collapsing uses a `Map` keyed by date, so two instructions on one day become one visit carrying both task identifiers. Coverage flagged an unreachable `return` created by an early `continue`; the `continue` was removed so one path serves every cadence, rather than documenting dead code as defensive.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
-### Task 0.5 — Digest model composition
+### Task 0.5 — Digest model composition ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Tasks 0.1, 0.2
-
-**What this task implements:**
-`buildDigestModel()`, which assembles the daily email's content as a data structure. Rendering to HTML happens in Phase 6; this task decides what the email says.
-
-**Files to create or modify:**
-- `src/core/digest.ts` — `buildDigestModel(input)` returning `DigestModel`
-- `src/core/digest.test.ts` — tests
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] A booking mid-range produces a timeline covering every date in the service range, with each day marked `past`, `today`, or `future`
-- [x] Past days with a visit log show a truncated summary; past days with a visit but no log show `logged: false`; past days with no visit show `hasVisit: false`
-- [x] Future days carry no summary and no outcome
-- [x] An unlogged visit on a past date produces an `unlogged_visit` attention item
-- [x] A booking missing `datesFirmAt` produces a `missing_dates_firm` attention item
-- [x] A booking missing `availabilityCheckedAt` produces a `missing_availability_check` attention item
-- [x] A booking starting within 7 days that is not confirmed produces a `starts_soon_unconfirmed` attention item
-- [x] Weather appears on a booking block only when at least one of its care instructions is `weatherRelevant`
-- [x] A model with no bookings and no attention items has `isEmpty: true`
-- [x] A model with no bookings but one attention item has `isEmpty: false`
-- [x] `buildDigestModel` takes today as an argument and reads no clock
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not render HTML or produce an email subject line — that is Phase 6
-- Does not fetch weather; weather arrives as an argument
-- Does not decide whether to send; that is Phase 6 service logic
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/digest.ts` (`buildDigestModel`), with 37 tests.
+**Key decisions:** A booking produces a block only when it has both dates, which is what makes the "no bookings but one attention item" criterion reachable — an inquiry-stage booking contributes attention items and no block. A future day never carries an outcome or summary even when a log exists for it. Filtering to active bookings is the caller's job and the doc comment says so, rather than inventing a policy the must-not-do list assigns to Phase 6. A test asserts the model's keys and that its serialization contains no markup, so rendering cannot leak in later.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
-### Task 0.6 — Slug generation and the demo harness
+### Task 0.6 — Slug generation and the demo harness ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Tasks 0.1 through 0.5
-
-**What this task implements:**
-Slug generation with its reserved and blocked word checks, and the demo script that makes the whole phase inspectable by a human. These are bundled because each is small and neither depends on the other.
-
-**Files to create or modify:**
-- `src/core/slug.ts` — `ALPHABET`, `SLUG_LENGTH`, `RESERVED`, `generateSlug(random)`, `isReserved(slug)`, `isBlocked(slug)`, `normalizeSlug(input)`
-- `src/core/slug.test.ts` — tests
-- `scripts/demo.ts` — prints a priced booking, a generated schedule, and a digest model
-- `package.json` — adds the `demo` script
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] `generateSlug` produces a 5-character string drawn only from the alphabet in Reference data
-- [x] `generateSlug` takes a random source as an argument and does not call `Math.random()`
-- [x] Given a seeded random source that would produce a reserved word, `generateSlug` retries and returns a different, valid slug
-- [x] Given a seeded random source that would produce a blocked word, `generateSlug` retries and returns a different, valid slug
-- [x] `normalizeSlug('ab3k9')` and `normalizeSlug('AB3K9')` return the same value
-- [x] `normalizeSlug` on a string containing a character outside the alphabet returns null
-- [x] `pnpm demo` runs to completion and prints, in order: an itemized priced booking matching the worked example, a generated visit schedule for a 7 day range with two instructions of different cadences, and a digest model for a mid-booking day rendered as readable text
-- [x] `pnpm demo` reads no environment variable, opens no network connection, and writes no file
-- [x] Tests pass: `pnpm test:unit`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not implement link storage, resolution, expiry, revocation, or rate limiting — that is Phase 3
-- Does not vendor an offensive-word list into the repository; use the `obscenity` package
-- Does not create anything under `src/db/`, `src/services/`, or `src/app/`
+**Output:** `src/core/slug.ts` (`ALPHABET`, `SLUG_LENGTH`, `RESERVED`, `generateSlug`, `isReserved`, `isBlocked`, `normalizeSlug`) with 26 tests, and `scripts/demo.ts`.
+**Key decisions:** `RandomSource` is injected, making "suppose the source would produce a reserved word" a deterministic test. `normalizeSlug` does not fold `I`/`O` onto `1`/`0` — that mapping has not been adopted here and would silently merge two links. **Flagged, not resolved:** `slug.ts` imports `obscenity`, which reads against the AGENTS.md sentence limiting `src/core/` to itself and Node built-ins; the task required the check here and forbade vendoring a list, and `obscenity` performs no I/O. **Reference data correction:** the dataset stores parsed patterns, not words, so it cannot be "filtered to five-character entries" — a `RegExpMatcher` is used instead, rejecting 0.171% of random slugs.
+**Session:** 2026-08-19 — `logs/phase-0.md`
 
 ---
 
@@ -380,9 +196,12 @@ Slug generation with its reserved and blocked word checks, and the demo script t
 
 ## Completed task log
 
+Compressed entries live under **Tasks** above, in order. This section is kept
+as the template for future phases.
+
 <!--
-### Task 0.X — [Task name] ✓
+### Task N.X — [Task name] ✓
 **Output:** [One sentence: what was built.]
 **Key decisions:** [Any non-obvious choices.]
-**Session:** [Date / SESSION_LOG pointer]
+**Session:** [Date / logs pointer]
 -->

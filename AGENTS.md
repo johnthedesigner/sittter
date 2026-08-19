@@ -296,4 +296,117 @@ Established because: [the concrete failure that motivated it].
 
 ---
 
+### typescript-eslint refuses to load against TypeScript 7
+
+`typescript` resolves to 7.x by default. `@typescript-eslint` 8.x will not run against it, and the failure takes down the WHOLE lint run — including the `src/core/` boundary rule — rather than degrading.
+
+```
+// wrong — pnpm lint dies before checking anything:
+//   Error: typescript-eslint does not support TS 7.0.
+//   Please see ... to run typescript-eslint using the TS 6 API.
+"typescript": "^7.0.2"
+
+// correct, until typescript-eslint ships TS 7 support
+"typescript": "6.0.3"
+```
+
+Established because: the boundary rule appeared to pass for several minutes while it was in fact not running at all. The lint rule outranks the compiler version. Re-prove the rule fires after ANY toolchain change.
+
+### A PEM private key in an env file needs literal backslash-n, and unquoted values do not expand
+
+`dotenv` expands `\n` only inside double quotes. A Google service account key pasted unquoted keeps its escapes literal and fails to parse, and the error names nothing that leads back to the cause.
+
+```ts
+// wrong — createPrivateKey throws:
+//   error:1E08010C:DECODER routines::unsupported
+// .env:  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMII...
+
+// correct — quote it, or normalize at the consumer
+key.replace(/\\n/g, '\n')
+```
+
+Established because: the pre-flight spike lost a cycle to a decoder error that mentions neither the key nor the env file. `src/services/calendar.ts` will need the same normalization in Phase 5.
+
+### pnpm 11 reads build-script approval from pnpm-workspace.yaml, not package.json
+
+The `pnpm.onlyBuiltDependencies` field in `package.json` is ignored. Without approval, esbuild never unpacks, and every `pnpm test:unit` fails inside a pre-flight `pnpm install` — the error names `pnpm install`, not esbuild and not vitest.
+
+```yaml
+# correct — pnpm-workspace.yaml
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+
+# wrong — silently ignored, then:
+#   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12 ...
+#   [ERROR] Command failed with exit code 1: pnpm install
+```
+
+Established because: `pnpm typecheck` failed with a stack trace inside pnpm's own bundle, which reads like a broken toolchain rather than a missing two-line config.
+
+### All three test runners exit non-zero on an empty glob
+
+`vitest` and `playwright` treat "no tests" as failure. A phase that legitimately has no tests yet cannot pass its gate without opting out.
+
+```
+// wrong — exit 1 during the scaffold gate:
+//   No test files found, exiting with code 1
+//   Error: No tests found
+
+// correct
+passWithNoTests: true          // vitest config
+playwright test --pass-with-no-tests
+```
+
+Established because: the scaffold gate requires each runner to exit cleanly with zero tests. **This is now a liability:** once a glob matches real files, one broken by a rename passes silently instead of failing. Remove it from a config as soon as that suite has its first test.
+
+### The src/core/ boundary applies to test files too, and that is correct
+
+`src/core/**/*.ts` matches `*.test.ts`. A test that reads its own module's source with `node:fs` is rejected.
+
+```ts
+// wrong — the rule fires on the test file itself
+import { readFileSync } from 'node:fs'
+
+// correct — assert purity at runtime instead
+const dateCtor = globalThis.Date as unknown as { now: () => number }
+dateCtor.now = () => { throw new Error('read the clock') }
+```
+
+Established because: the first purity test for `dates.ts` needed `node:fs`. Adding a test-file exception to the boundary rule was the tempting fix and would have been the most serious failure available in this project. Reached through a binding so the assertion does not itself trip `no-restricted-properties`.
+
+### obscenity stores parsed patterns, not words
+
+`englishDataset` cannot be enumerated into a word list — `originalWord` is not reachable from `build()`, and the patterns carry wildcards and optional characters. Match candidates against it rather than filtering it.
+
+```ts
+// wrong — yields nothing; there are no plain words to filter
+[...englishDataset.containers].filter((c) => c.originalWord?.length === 5)
+
+// correct
+const matcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+})
+matcher.hasMatch(candidate)
+```
+
+Established because: `tasks/phase-0.md` Reference data instructs filtering the dataset to five-character entries, which is not possible. The matcher rejects 0.171% of random slugs, so retrying on a hit is cheap. The recommended transformers catch leet-speak, which matters because the slug alphabet contains digits.
+
+### Prove a guard fails before trusting it
+
+Every check added in Phase 0 — the lint boundary rule, and each module's runtime purity test — was made to fail on a deliberate violation before being kept, then the violation was reverted.
+
+```ts
+// the discipline, applied to each new guard:
+// 1. write the check
+// 2. break the thing it guards on purpose
+// 3. watch it go red, and read the message
+// 4. revert
+```
+
+Established because: pinning TypeScript silently disabled the entire lint layer mid-scaffold, and only re-proving the rule caught it. A guard never seen to fail is indistinguishable from one that cannot fail.
+
+---
+
 *This file is version-controlled. Changes to it require a commit with a clear message explaining why the rule changed.*
