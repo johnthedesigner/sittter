@@ -2,13 +2,17 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — In progress, 4 of 6 tasks complete
-**Next task:** 0.5 — Digest model composition
-**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`, `schedule.ts`. 143 unit tests, all passing. Scaffold and tooling complete. No digest, no slug, no demo harness, no database.
+**Phase:** 0 — Pure core — In progress, 5 of 6 tasks complete
+**Next task:** 0.6 — Slug generation and the demo harness
+**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`, `schedule.ts`, `digest.ts`. 180 unit tests, all passing. Scaffold and tooling complete. No slug, no demo harness, no database.
 
-**Available to Task 0.5:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`; `generateVisits`.
+**Available to Task 0.6:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; all of `dates.ts`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`; `generateVisits`; `buildDigestModel`.
 
-**Note for Task 0.5:** `truncateNote` already exists from Task 0.2 and defaults to 60 characters, which is the digest timeline's truncation rule — do not write a second one. The `DigestModel`, `DigestBookingBlock`, `DigestTimelineDay`, `DigestWeather`, and `DigestAttentionItem` types are already defined in `types.ts`.
+**Notes for Task 0.6:**
+- The demo harness must print a priced booking, a generated visit schedule, and a rendered digest model. All three functions exist and are listed above.
+- `scripts/demo.ts` is already wired: `pnpm demo` runs `tsx scripts/demo.ts`. The file does not exist yet.
+- `generateSlug` needs an injected random source — `src/core/` may not call `Math.random()`, and the ESLint rule enforces it. The slug alphabet, reserved list, and the `obscenity` filtering approach are resolved in the `tasks/phase-0.md` Reference data.
+- **`obscenity` is a runtime dependency and is already installed**, but `src/core/` may not import packages that perform input or output. Confirm `obscenity` is pure before importing it from `src/core/slug.ts`; if it is not, the blocked-word check belongs behind an injected argument.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
@@ -17,6 +21,44 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.5: Digest model composition
+
+**What was done:**
+- `src/core/digest.ts` — `buildDigestModel(input)` returning `DigestModel`, plus the `DigestInput`, `DigestBookingInput`, and `DigestVisitLog` shapes
+- `src/core/digest.test.ts` — 37 tests
+
+**Decisions made:**
+
+- **A booking produces a block only when it has BOTH dates.** `DigestBookingBlock` types `startDate` and `endDate` as non-null, and a block is built around a timeline that needs a range to expand. This is what makes the acceptance criterion "no bookings but one attention item" reachable at all: a booking still at the inquiry stage contributes attention items and no block. Worth recording because the two `isEmpty` criteria look contradictory until you see why.
+- **A future day never carries an outcome or a summary, even when a log exists for it.** The email must not report on something that has not happened; a log on a future date is data to fix, not to render. There is a test that plants exactly that bad data and asserts it stays out.
+- **Filtering to active bookings is the caller's job, and is documented as such.** The must-not-do list says this function does not decide whether to send, and the digest's scope is Phase 6 service logic. It reports on what it is given rather than inventing a policy about which bookings belong — but the function's doc comment says so explicitly, so a caller cannot assume otherwise by accident.
+- **`deriveStatus` is used for exactly one rule.** `starts_soon_unconfirmed` needs to know whether a booking is committed to, which is precisely what Task 0.2 computes. The other three attention rules read their flags directly, because the criteria state them as flag conditions.
+- **`truncateNote` was reused, not rewritten.** It already existed from Task 0.2 with the correct 60-character default.
+- **Attention labels are written in plain, non-accusatory language** — "the family calendar" rather than "you failed to check". `docs/META-PLAN.md` §6 makes the tone of this email a Phase 6 review gate, and the copy has to start somewhere. Dates inside labels are left as `YYYY-MM-DD`; friendlier date formatting is a rendering concern and Phase 6 owns it. There is a test asserting no label contains placeholder copy or a stray `undefined`.
+- **An unknown task identifier is dropped rather than throwing.** A care instruction deleted after a visit was generated should not break the morning email.
+
+**Not done:**
+- **No HTML, no subject line.** There is a test asserting the model's keys are exactly `date`, `bookings`, `attention`, `isEmpty` and that its serialization contains no markup, so rendering cannot leak in later without a red test.
+- **No weather fetching.** Weather arrives as an argument; this decides only whether it is worth showing.
+- **No send decision.**
+- **Nothing from Task 0.6** — no slug generation, no demo harness.
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 180 tests, 6 files, 329 ms |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Coverage, `digest.ts` | 100% statements, branches, and functions |
+| Coverage, all of `src/core/` | 99.22% statements, 98.3% branches, 100% functions |
+
+---
 
 ## 2026-08-19 — Task 0.4: Visit schedule generation
 

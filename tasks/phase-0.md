@@ -283,8 +283,8 @@ The single function that decides what a booking is called, and the mapping that 
 
 ### Task 0.5 — Digest model composition
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Tasks 0.1, 0.2
 
 **What this task implements:**
@@ -297,21 +297,21 @@ The single function that decides what a booking is called, and the mapping that 
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] A booking mid-range produces a timeline covering every date in the service range, with each day marked `past`, `today`, or `future`
-- [ ] Past days with a visit log show a truncated summary; past days with a visit but no log show `logged: false`; past days with no visit show `hasVisit: false`
-- [ ] Future days carry no summary and no outcome
-- [ ] An unlogged visit on a past date produces an `unlogged_visit` attention item
-- [ ] A booking missing `datesFirmAt` produces a `missing_dates_firm` attention item
-- [ ] A booking missing `availabilityCheckedAt` produces a `missing_availability_check` attention item
-- [ ] A booking starting within 7 days that is not confirmed produces a `starts_soon_unconfirmed` attention item
-- [ ] Weather appears on a booking block only when at least one of its care instructions is `weatherRelevant`
-- [ ] A model with no bookings and no attention items has `isEmpty: true`
-- [ ] A model with no bookings but one attention item has `isEmpty: false`
-- [ ] `buildDigestModel` takes today as an argument and reads no clock
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] A booking mid-range produces a timeline covering every date in the service range, with each day marked `past`, `today`, or `future`
+- [x] Past days with a visit log show a truncated summary; past days with a visit but no log show `logged: false`; past days with no visit show `hasVisit: false`
+- [x] Future days carry no summary and no outcome
+- [x] An unlogged visit on a past date produces an `unlogged_visit` attention item
+- [x] A booking missing `datesFirmAt` produces a `missing_dates_firm` attention item
+- [x] A booking missing `availabilityCheckedAt` produces a `missing_availability_check` attention item
+- [x] A booking starting within 7 days that is not confirmed produces a `starts_soon_unconfirmed` attention item
+- [x] Weather appears on a booking block only when at least one of its care instructions is `weatherRelevant`
+- [x] A model with no bookings and no attention items has `isEmpty: true`
+- [x] A model with no bookings but one attention item has `isEmpty: false`
+- [x] `buildDigestModel` takes today as an argument and reads no clock
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not render HTML or produce an email subject line — that is Phase 6
