@@ -2,19 +2,64 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — In progress, 1 of 6 tasks complete
-**Next task:** 0.2 — Status derivation and customer-facing presentation
-**What's built:** `src/core/types.ts` (the full domain type vocabulary from `docs/dev-plan.md` §6) and `src/core/dates.ts` (calendar date arithmetic) with 41 unit tests. Scaffold and tooling complete. Nothing else — no status derivation, no pricing, no scheduling, no digest, no slug, no demo harness, no database.
+**Phase:** 0 — Pure core — In progress, 2 of 6 tasks complete
+**Next task:** 0.3 — Pricing engine
+**What's built:** `src/core/types.ts`, `src/core/dates.ts`, `src/core/status.ts`, `src/core/presentation.ts`. 88 unit tests, all passing. Scaffold and tooling complete. No pricing, no scheduling, no digest, no slug, no demo harness, no database.
 
-**Available to Task 0.2:** `CalendarDate` and every domain type from §6; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`.
+**Available to Task 0.3:** every domain type from §6; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive — this is the per-day pricing basis), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`.
+
+**Note for Task 0.3:** `DEFAULT_PRICING_COMPONENTS` from `docs/dev-plan.md` §6.1 has not been written. It was deliberately left out of Task 0.1 as pricing scope and belongs to this task.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
-**Open questions:** Three deferred items in `docs/spec.md` §10, not to be resolved during implementation. The Phase 5 calendar-onboarding question was resolved by the human on 2026-08-19. Two items still need a human decision, neither blocking Phase 0: **the Vercel cron schedule** (before Phase 6) and **the TypeScript 6 pin** (whenever typescript-eslint supports TS 7). Both are recorded in the scaffold entry.
+**Open questions:** Three deferred items in `docs/spec.md` §10, not to be resolved during implementation. The Phase 5 calendar-onboarding question was resolved by the human on 2026-08-19. Two items still need a human decision, neither blocking Phase 0: **the Vercel cron schedule** (before Phase 6) and **the TypeScript 6 pin** (whenever typescript-eslint supports TS 7).
 
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.2: Status derivation and customer-facing presentation
+
+**What was done:**
+- `src/core/status.ts` — `deriveStatus(booking, today)`
+- `src/core/presentation.ts` — `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`
+- `src/core/status.test.ts` — 24 tests
+- `src/core/presentation.test.ts` — 23 tests
+
+**Decisions made:**
+
+- **`deriveStatus` is written as eight sequential branches, one per row of the derivation table, in the table's order.** It would be shorter as a lookup or a set of combined conditions, and that would be worse: the order *is* the specification. It encodes precedence the individual conditions do not carry — a cancelled booking is cancelled even with both flags set and a future range, and a declined booking is declined even when paid. Each branch carries a comment naming what it decides so that a later reader does not "simplify" two adjacent branches that happen to agree today.
+- **`CUSTOMER_FACING_LABELS` and `toCustomerFacingLabel` were added.** The task names only `toCustomerFacingStatus`, but the acceptance criterion requires a test asserting the exact *label* for every row, and the label strings had to live somewhere. They live in one place so that changing "Waiting on you" changes it everywhere, and so no surface spells the words a second time.
+- **`toCustomerFacingStatus` takes the booking as a required argument, not an optional one.** Only `tentative` needs it, to split on `datesFirmAt` into "Waiting on you" versus "Waiting on us". Making it optional would make it easy to omit silently and point the finger at the wrong party.
+- **`truncateNote` defaults to 60 and takes `maxLength` as an argument** rather than hard-coding the reference-data value, so the digest can pass its own without a second function.
+
+**A bug found by a test, and the ordering that found it.**
+
+The first implementation of `truncateNote` sliced to `maxLength`, found the last space, and cut there — which silently dropped a whole word whenever the note happened to break exactly on a word boundary. `truncateNote('one two three...', 7)` returned `'one…'` when `'one two'` fits in seven characters exactly. The test was written from the specification ("the last whole word that fits") before the edge case was considered, so it failed and named the problem. Fixed by checking whether the character just past the window is a space, in which case the window already ends on a complete word.
+
+Two later failures in the same test were the reverse — my *expected* strings were wrong, not the code. Both were resolved by computing the correct boundary and confirming the implementation's answer was right, rather than pasting the received value into the assertion. Worth recording because pasting the received value is the failure mode this project's review gate is designed to catch, and it is indistinguishable from a fix unless you check.
+
+**Not done:**
+- **No status is stored anywhere.** `deriveStatus` computes on demand; no type gained a status field.
+- **`DEFAULT_PRICING_COMPONENTS` still not written.** It belongs to Task 0.3.
+- **Nothing from Tasks 0.3 through 0.6** — no pricing, scheduling, digest, slug, or demo harness.
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 88 tests, 3 files, 230 ms |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Coverage, `status.ts` | 100% statements, branches, functions |
+| Coverage, `presentation.ts` | 100% statements, branches, functions |
+| Coverage, all of `src/core/` | 98.26% statements, 97.7% branches, 100% functions |
+
+---
 
 ## 2026-08-19 — Task 0.1: Domain types and calendar date arithmetic
 

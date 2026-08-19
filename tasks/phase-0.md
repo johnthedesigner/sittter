@@ -165,8 +165,8 @@ The complete type vocabulary for the domain, and a set of calendar date function
 
 ### Task 0.2 — Status derivation and customer-facing presentation
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 0.1
 
 **What this task implements:**
@@ -181,20 +181,20 @@ The single function that decides what a booking is called, and the mapping that 
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] Every row of the derivation table in Reference data has at least one test asserting the exact resulting status
-- [ ] A cancelled booking with both confirmation flags set and dates in the future derives `cancelled`, proving precedence
-- [ ] A declined booking with a past end date and a paid date derives `declined`, proving precedence
-- [ ] A booking with a start date but no end date derives `inquiry`
-- [ ] A booking whose range includes today, with both flags set, derives `in_progress`
-- [ ] A booking whose end date is yesterday, with both flags set and no paid date, derives `complete`
-- [ ] Every row of the customer-facing mapping table has a test asserting the exact label
-- [ ] `truncateNote` on a 60-character note returns it unchanged with no ellipsis
-- [ ] `truncateNote` on a 90-character note returns at most 60 characters plus `…`, cut at a word boundary
-- [ ] `deriveStatus` takes today as an argument and reads no clock
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] Every row of the derivation table in Reference data has at least one test asserting the exact resulting status
+- [x] A cancelled booking with both confirmation flags set and dates in the future derives `cancelled`, proving precedence
+- [x] A declined booking with a past end date and a paid date derives `declined`, proving precedence
+- [x] A booking with a start date but no end date derives `inquiry`
+- [x] A booking whose range includes today, with both flags set, derives `in_progress`
+- [x] A booking whose end date is yesterday, with both flags set and no paid date, derives `complete`
+- [x] Every row of the customer-facing mapping table has a test asserting the exact label
+- [x] `truncateNote` on a 60-character note returns it unchanged with no ellipsis
+- [x] `truncateNote` on a 90-character note returns at most 60 characters plus `…`, cut at a word boundary
+- [x] `deriveStatus` takes today as an argument and reads no clock
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not add a `status` field to any type as stored data; status is computed on demand
