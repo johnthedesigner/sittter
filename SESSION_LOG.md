@@ -34,6 +34,7 @@
 ## Session entries
 
 Phase 0 session entries archived to `logs/phase-0.md`.
+Phase 1 session entries archived to `logs/phase-1.md` — **reconstructed from commit messages at housekeeping; see the note at the top of that file.**
 
 ---
 

@@ -407,6 +407,100 @@ Every check added in Phase 0 — the lint boundary rule, and each module's runti
 
 Established because: pinning TypeScript silently disabled the entire lint layer mid-scaffold, and only re-proving the rule caught it. A guard never seen to fail is indistinguishable from one that cannot fail.
 
+### Nothing outside Next.js loads a .env file
+
+`next dev` and `next build` read `.env` automatically. `drizzle-kit`, `tsx`, `vitest`, and Playwright do not, and a missing variable surfaces far from its cause.
+
+```ts
+// correct — drizzle.config.ts, src/db/seed.ts
+import 'dotenv/config'
+
+// correct — vitest.integration.config.ts, playwright.config.ts
+const testEnv = loadEnv({ path: '.env.test' }).parsed ?? {}
+
+// wrong — DATABASE_URL is undefined, and the error names pnpm install:
+//   [ERR_PNPM_IGNORED_BUILDS] ... [ERROR] Command failed: pnpm install
+```
+
+Established because: `drizzle.config.ts` had been reading `process.env.DATABASE_URL` as `undefined` from the moment it was written, and the failure looked like a driver problem.
+
+### Ignore the whole .env family, not the variants that exist today
+
+`.gitignore` listed `.env` and `.env.local`. `.env.test` was created months later, holds a live Neon connection string, and was one `git add -A` from being committed.
+
+```
+# correct
+.env
+.env.*
+!.env.example
+
+# wrong — only covers what existed when it was written
+.env
+.env.local
+```
+
+Established because: a credential was caught by luck rather than by rule. Verify with `git check-ignore -v .env.test`.
+
+### Vite 8 uses oxc, not esbuild, and ignores the old key silently
+
+Vite 8 replaced esbuild for transforms. An `esbuild: {...}` block in a Vitest config has no effect and produces no warning, so a wrong guess looks like the option not working.
+
+```ts
+// correct
+oxc: { jsx: { runtime: 'automatic' } }
+
+// wrong — silently ignored, and .tsx keeps failing as:
+//   Failed to parse source for import analysis because the content
+//   contains invalid JS syntax. ... make sure to not set jsx to preserve.
+esbuild: { jsx: 'automatic' }
+```
+
+Established because: two attempts at a JSX override appeared to do nothing. Note `pnpm build` also rewrites `tsconfig.json`'s `jsx` to `react-jsx` — so tests pass for anyone who has built, and fail on a fresh clone that has not.
+
+### Anything a test asserts on must live in a module with no framework imports
+
+Importing a constant from a React server component pulls its whole import graph into the test process.
+
+```ts
+// wrong — Playwright fails before any test runs:
+//   Cannot find module '.../node_modules/next/navigation'
+import { COPY } from '../src/app/signin/page'
+
+// correct — src/app/signin/copy.ts imports nothing
+import { SIGN_IN_COPY } from '../src/app/signin/copy'
+```
+
+Established because: copy strings living beside the markup that renders them made the sign-in journey untestable. The copy is better off in its own module regardless.
+
+### An end-to-end test cannot follow a real magic link, and should not try
+
+Only the SHA-256 hash is stored, so there is no way to recover a plaintext token from the database — which is the property the design is aiming for. Reading a real inbox would be slow, flaky, and would send mail on every run.
+
+```ts
+// correct — e2e/fixtures.ts plays the role the email plays
+const token = randomBytes(32).toString('base64url')
+await createMagicLinkToken(businessId, { adminId, tokenHash: hashToken(token), expiresAt })
+
+// and playwright.config.ts starts the server with a key that cannot authenticate,
+// so exercising the real form sends nothing:
+env: { ...testEnv, RESEND_API_KEY: 'e2e-no-real-sends' }
+```
+
+Established because: journey step 8.1.2 exercises the real sign-in form. Without the override, every `pnpm test:e2e` would send a real email. The resulting 401s in the log are the fail-soft rule holding, not a fault.
+
+### Write the session log entry at the end of the session, not at housekeeping
+
+`AGENTS.md` requires both a session entry and a replaced Current State block. Replacing only the Current State loses the reasoning, and the loss is invisible until someone looks for it.
+
+```
+// what happened across all five Phase 1 tasks:
+//   Current State replaced        ✓
+//   session entry added           ✗  — five times, unnoticed
+//   gate item ticked anyway       ✗
+```
+
+Established because: Phase 1's entries had to be reconstructed from commit messages at housekeeping, and `logs/phase-1.md` now carries a note saying so. Detailed commit messages made the reconstruction faithful — but the gate item claiming a complete entry for every session had already been ticked in error.
+
 ---
 
 *This file is version-controlled. Changes to it require a commit with a clear message explaining why the rule changed.*

@@ -90,214 +90,47 @@ Every repository function takes `businessId` as its **first** argument, without 
 
 ---
 
-## Tasks
+## Tasks — all complete, compressed at the Phase 1 housekeeping session
 
-### Task 1.1 — Schema, client, and the first migration
+Full bodies, acceptance criteria, and must-not-do lists are in the git history at commit `6eac75e` and earlier. Session detail is in `logs/phase-1.md`.
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** none
+### Task 1.1 — Schema, client, and the first migration ✓
 
-**What this task implements:**
-Every table from `docs/dev-plan.md` §5 as Drizzle definitions, the database client, and the first generated migration reviewed and committed. After this task the database exists and is empty.
-
-**Files to create or modify:**
-- `src/db/schema.ts` — all 21 tables from `docs/dev-plan.md` §5
-- `src/db/client.ts` — a single Drizzle client instance over `@neondatabase/serverless`
-- `src/lib/env.ts` — parsed and validated environment, using `zod`, failing loudly at startup on a missing variable
-- `drizzle/` — the generated migration, reviewed, never hand-edited
-- `.env.example` — no change expected; confirm it already covers this task's variables
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] Every table in `docs/dev-plan.md` §5 exists in `src/db/schema.ts` with matching column names, types, nullability, defaults, and unique constraints
-- [x] Every money column is an integer type; no `numeric`, `real`, or `float` column holds a currency value
-- [x] Every calendar date column is `date`; every instant column is `timestamptz`. Specifically: `bookings.start_date`, `bookings.end_date`, `bookings.paid_at`, `visits.date`, `visit_logs.logged_date`, `observed_weather.observed_date`, and `digest_sends.send_date` are `date`, while `created_at`, `dates_firm_at`, and `synced_at` are `timestamptz`
-- [x] `pnpm db:generate` produces a migration, and the generated SQL is read and confirmed to match the schema before committing
-- [x] `pnpm db:migrate` applies cleanly to an empty database
-- [x] Applying the migration twice is safe — the second run reports nothing to apply rather than failing
-- [x] `src/lib/env.ts` throws a named error listing the missing variable when `DATABASE_URL` is absent, rather than failing later with a connection error
-- [x] No file in `drizzle/` has been hand-edited
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not write any repository function — that is Task 1.2
-- Does not run any `push` command against any database, in any environment
-- Does not hand-edit generated SQL; if the output looks wrong, stop and flag it
-- Does not add a `status` column to `bookings`, now or ever
-- Does not seed any data — that is Task 1.2
+**Output:** `src/db/schema.ts` (21 tables, 7 enums, 4 check constraints), `src/db/client.ts`, `src/lib/env.ts`, and `drizzle/0000_foamy_marvel_apes.sql` applied to both Neon branches.
+**Key decisions:** The client is lazy so `drizzle-kit` can read the schema without a connection string. `env.ts` validates with zod and names every missing variable. **Two defects found:** `dotenv` was installed but never imported, so `drizzle.config.ts` had been reading `DATABASE_URL` as undefined since it was written; and `.gitignore` did not cover `.env.test`, which holds a live Neon credential — untracked and never committed, and the rule now covers the whole `.env` family.
+**Session:** 2026-08-19 — `logs/phase-1.md`
 
 ---
 
-### Task 1.2 — Repositories and the seed fixture
+### Task 1.2 — Repositories and the seed fixture ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 1.1
-
-**What this task implements:**
-A repository module per table, each function scoped by business, plus a deterministic seed fixture. After this task the database is the only thing that holds state and repositories are the only way to reach it.
-
-**Files to create or modify:**
-- `src/db/repositories/*.ts` — one module per table group, per the structure in `AGENTS.md`
-- `src/db/seed.ts` — one business, two admins, two customers, three bookings per Reference data
-- `src/db/repositories/*.test.ts` — integration tests against a real database
-- `vitest.integration.config.ts` — remove `passWithNoTests`; this suite now has tests, and a glob broken by a rename must fail rather than pass silently
-
-**Journey steps enabled:** none — no user-facing surface.
-
-**Acceptance criteria:**
-- [x] Every repository function takes `businessId` as its first argument, including single-row reads by primary key
-- [x] Every write function has a test that reads the row back and asserts the persisted values, not merely the return value
-- [x] Every read function has a test that seeds a **second** business and asserts the function does not return its rows
-- [x] A repository serving a customer surface names every column it returns; `select()` with no column list does not appear in any function reachable from the customer portal, the intake form, or the booking form
-- [x] `pnpm db:seed` runs against an empty database and produces exactly one business, two admins, two customers, and three bookings
-- [x] `pnpm db:seed` is idempotent, or fails loudly on a non-empty database — state which, and test it
-- [x] The three seeded bookings derive `confirmed`, `tentative`, and `inquiry` respectively when passed to `deriveStatus` with the seed's reference date
-- [x] `grep` for `drizzle-orm` outside `src/db/` returns nothing but `drizzle.config.ts`
-- [x] `passWithNoTests` removed from `vitest.integration.config.ts`, and `pnpm test:integration` fails if the glob matches nothing
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not write any service, route handler, or page
-- Does not put business logic in a repository; a repository reads and writes rows
-- Does not import `drizzle-orm` anywhere outside `src/db/`
-- Does not use `Date.now()` inside a seed fixture definition; the seed takes a reference date as an argument
+**Output:** 15 repository modules, 71 functions, `src/db/seed.ts`, `src/db/testing/database.ts`, and 49 integration tests.
+**Key decisions:** 70 of 71 functions take `businessId` first; the exception is `createBusiness`, documented alongside `getOnlyBusiness` as the only two, both bootstrap. The audit caught `findLinkBySlug` and `recordLinkHit` taking a slug and no business — fixed, because "the argument is currently redundant" is exactly the shortcut AGENTS.md warns about. Access codes are excluded at the query layer: `getPropertyForPortal` names its columns and a test asserts the serialized result contains neither the code nor the notes. The seed refuses a non-empty database rather than attempting idempotency. `passWithNoTests` removed from **both** vitest configs.
+**Session:** 2026-08-19 — `logs/phase-1.md`
 
 ---
 
-### Task 1.3 — The email service and its send log
+### Task 1.3 — The email service and its send log ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 1.2
-
-**What this task implements:**
-`src/services/email.ts` — the only file in the repository that imports `resend` — with logging to `email_sends` and one retry. Built before authentication because the magic link depends on it.
-
-**Files to create or modify:**
-- `src/services/email.ts` — `send`, logging, retry-once
-- `src/emails/layout.tsx` — shared email shell
-- `src/emails/magic-link.tsx` — per the Reference data copy
-- `src/services/email.test.ts` — integration tests with Resend faked at the module boundary
-- ~~`e2e/fixtures.ts`~~ → `src/services/testing/resend-fake.ts` — the shared vendor fake. `e2e/` is Playwright's directory and a Vitest module mock does not belong there; `e2e/fixtures.ts` is created in Task 1.5 when Playwright actually needs it. Writing it empty now would be a placeholder, which AGENTS.md forbids.
-
-**Journey steps enabled:** none directly — this is what makes 8.1.2 possible in Task 1.4.
-
-**Acceptance criteria:**
-- [x] `src/services/email.ts` is the only file importing `resend`; `grep` confirms it
-- [x] A successful send writes an `email_sends` row with `kind`, `recipient`, `subject`, and the provider's identifier
-- [x] A failed send writes an `email_sends` row with `error` populated and `provider_id` null
-- [x] A failed send is retried exactly once, and a test asserts the provider was called twice
-- [x] A send that fails twice does **not** throw to its caller; it returns a result the caller can inspect
-- [x] The magic link email renders with every string from the Reference data table, asserted exactly
-- [x] The rendered email contains an absolute URL built from `APP_URL`, with no trailing double slash
-- [x] The Resend fake is defined once, in a shared fixture, not inline per test
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not import `resend` anywhere else, now or later
-- Does not send a real email from a test
-- Does not write any other email template — the remaining templates belong to Phases 2 through 6
-- Does not implement the retry as an unbounded loop; exactly one retry
+**Output:** `src/services/email.ts` (the only file importing `resend`), `src/emails/layout.tsx`, `src/emails/magic-link.tsx`, and the shared Resend fake at `src/services/testing/resend-fake.ts`.
+**Key decisions:** A send never throws; callers inspect `{ ok, providerId, error, attempts }`. One `email_sends` row per send, not per attempt. Retry is exactly one further attempt, proved by queueing three failures and asserting the provider was called twice. Copy is exported as `MAGIC_LINK_COPY` so the test asserts the strings the template renders. The fake replaces the `resend` module itself, which is what proves the boundary. **Deviation:** the fake lives in `src/services/testing/`, not the `e2e/fixtures.ts` this file originally named — `e2e/` is Playwright's directory.
+**Session:** 2026-08-19 — `logs/phase-1.md`
 
 ---
 
-### Task 1.4 — Magic link issue and consume
+### Task 1.4 — Magic link issue and consume ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 1.3
-
-**What this task implements:**
-`src/services/auth.ts` — issuing a magic link, consuming it, creating a session, and verifying a session. This is the security-critical task of the phase and every failure mode is tested explicitly.
-
-**Files to create or modify:**
-- `src/services/auth.ts` — `issueMagicLink`, `consumeMagicLink`, `createSession`, `verifySession`, `destroySession`
-- `src/lib/session.ts` — cookie read and write, per the Reference data attributes
-- `src/services/auth.test.ts` — integration tests
-
-**Journey steps enabled:** none directly — 8.1.2 through 8.1.5 become testable end to end in Task 1.5.
-
-**Acceptance criteria:**
-- [x] Tokens are generated with `node:crypto` `randomBytes`, 32 bytes, base64url encoded; `Math.random()` appears nowhere in the auth path
-- [x] Only a SHA-256 hash is stored; a test asserts the plaintext token does not appear in any column of `magic_link_tokens` or `sessions`
-- [x] An expired token fails closed — a test advances past 15 minutes and asserts consumption fails
-- [x] A consumed token fails on second use — a test consumes twice and asserts the second attempt fails (journey step 8.1.4)
-- [x] A token for an email that is not a registered admin is never issued, and `issueMagicLink` returns the same result shape as a successful issue so the caller cannot leak the difference (journey step 8.1.5)
-- [x] A token belonging to a deleted admin fails closed rather than throwing
-- [x] A tampered token — a valid-looking string that hashes to nothing stored — fails closed
-- [x] `verifySession` rejects an expired session, and a test asserts it
-- [x] The session cookie is `httpOnly`, `secure`, and `sameSite: 'lax'`, asserted in a test rather than read off the source
-- [x] `consumeMagicLink` sets `admins.last_seen_at`
-- [x] Every function takes the current instant as an argument rather than reading a clock, so expiry is testable without waiting
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not build any page or route handler — that is Task 1.5
-- Does not put a signed payload, an encoded identifier, or a JWT in the link; the token is an opaque lookup key resolved server-side
-- Does not reveal, in any return value or error, whether an email address is registered
-- Does not write SQL or call the Drizzle query builder; all database access goes through `src/db/repositories/`
+**Output:** `src/services/auth.ts`, `src/lib/session.ts`, and 34 integration tests.
+**Key decisions:** Tokens are 32 bytes from `node:crypto`; only SHA-256 hashes are stored, and a test reads every row of both auth tables to assert neither plaintext token appears. Nine failure modes each get their own test, including a token whose admin was deleted since issue — the case most likely to have been an unhandled crash. `issueMagicLink` returns an identical value for registered, unregistered, and delivery-failed. SHA-256 is deliberate: these are 256-bit random tokens, not passwords. The cookie is `sameSite: 'lax'`, not `'strict'`, which would drop it on the navigation from a mail client.
+**Session:** 2026-08-19 — `logs/phase-1.md`
 
 ---
 
-### Task 1.5 — Sign-in surface and the session guard
+### Task 1.5 — Sign-in surface and the session guard ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 1.4
-
-**What this task implements:**
-The pages and route handler that make signing in real, the layout guard that protects admin routes, and one stub page rendering the signed-in admin's name. This is the task that proves the chain from cookie to database.
-
-**Files to create or modify:**
-- `src/app/signin/page.tsx` — the sign-in form, per the Reference data copy
-- `src/app/(admin)/actions/auth.ts` — the server action that requests a link
-- `src/app/api/auth/callback/route.ts` — consumes the token, sets the cookie, redirects
-- `src/app/(admin)/layout.tsx` — session guard, redirecting to `/signin` when absent or expired
-- `src/app/(admin)/home/page.tsx` — the stub, rendering the signed-in admin's name
-- `src/app/layout.tsx`, `src/app/page.tsx` — root shell and a redirect to `/home`
-- `e2e/journey-8.spec.ts` — Journey 8, citing step range 8.1.1–8.1.6 in a header comment
-- `docs/user-journeys.md` — coverage table updated
-
-**Journey steps enabled:** 8.1.1, 8.1.2, 8.1.3, 8.1.4, 8.1.5, 8.1.6.
-
-**Acceptance criteria:**
-- [x] 8.1.1 — visiting the app signed out loads the sign-in page
-- [x] 8.1.2 — submitting a registered email shows the exact Reference data message and does not confirm registration
-- [x] 8.1.3 — following the emailed link creates a session and loads `/home`, which renders the signed-in admin's **name**, taken from the database rather than the cookie
-- [x] 8.1.4 — following the same link a second time shows the invalid-link page with its exact copy
-- [x] 8.1.5 — submitting an unregistered email shows the **same** message as 8.1.2, and a test asserts no `email_sends` row was written
-- [x] 8.1.6 — a request carrying a valid session cookie loads `/home` without a new sign-in
-- [x] Visiting any `(admin)` route without a session redirects to `/signin`, asserted for `/home` specifically
-- [x] Visiting an `(admin)` route with an expired session redirects to `/signin` rather than erroring
-- [x] The route handler and server action are thin: no SQL, no Drizzle call, no business logic that belongs in `src/services/`
-- [x] Every user-facing string matches the Reference data exactly; no placeholder copy appears on any surface
-- [x] `pnpm build` succeeds
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm typecheck` passes with zero errors
-- [x] `pnpm lint` passes with zero errors
-- [x] `docs/user-journeys.md` coverage table updated with the Journey 8 row
-- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
-
-**Must not do:**
-- Does not build any booking, customer, or settings interface; `/home` renders a name and nothing else
-- Does not style beyond what is needed to read the page; the visual design pass is Phase 7
-- Does not write SQL or call the Drizzle query builder outside `src/db/repositories/`
-- Does not add a "remember me" option, a password fallback, or a second authentication method
-- Does not reveal whether an email address is registered, on any surface or in any status code
+**Output:** `/signin`, `/api/auth/callback`, the `(admin)` session guard, the `/home` stub, `e2e/fixtures.ts`, and `e2e/journey-8.spec.ts` covering steps 8.1.1–8.1.6.
+**Key decisions:** 8.1.5 submits a registered and an unregistered address through one helper and asserts the rendered text is byte-identical. Copy moved to `src/app/signin/copy.ts` because importing it from `page.tsx` dragged `next/navigation` into the Playwright process. E2E cannot follow a real email by construction, so `e2e/fixtures.ts` mints a link directly and the web server runs with a `RESEND_API_KEY` that cannot authenticate. `pnpm build` rewrote `tsconfig.json`'s `jsx` to `react-jsx` on first run.
+**Session:** 2026-08-19 — `logs/phase-1.md`
 
 ---
 
@@ -314,7 +147,7 @@ The pages and route handler that make signing in real, the layout guard that pro
 - [x] **Review gate:** an expired magic link token fails closed — asserted at one millisecond before expiry, exactly at expiry, and after, plus end to end through the UI.
 - [x] **Review gate:** a consumed token fails on second use — asserted in integration and again in `e2e/journey-8.spec.ts` 8.1.4, including that no second session row is created.
 - [x] **Review gate:** the session cookie is `httpOnly`, `secure`, `sameSite: 'lax'` — asserted against the object the writer passes. **Still worth reading off a real response by hand.**
-- [x] `SESSION_LOG.md` has a complete entry for every session in this phase
+- [x] `SESSION_LOG.md` has a complete entry for every session in this phase — **corrected at housekeeping.** The entries were not written per session; they were reconstructed from commit messages into `logs/phase-1.md`. This box was ticked in error before that was noticed.
 - [x] `docs/plan-summary.md` status line updated for Phase 1
 - [x] `docs/user-journeys.md` reviewed, coverage table updated with Journey 8
 - [x] Phase retrospective written to `docs/phase-1-retro.md`
