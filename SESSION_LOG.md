@@ -9,10 +9,10 @@
 
 **Housekeeping session run 2026-08-19.** Task entries in `tasks/phase-0.md` compressed (388 → 207 lines), Phase 0 session entries archived to `logs/phase-0.md`, seven entries added to the AGENTS.md Patterns established section.
 
-**Before Phase 1 can start, two things remain the human's, per `docs/META-PLAN.md`:**
+**Before Phase 1 can start:**
 
-1. **Read `pnpm demo` output by hand and judge it** (§6, Phase 0 gate). The agent read it and fixed two defects it found — a misaligned total and a day offset that would have broken across a month boundary — but the gate asks for a human, and an agent checking its own output is not that check.
-2. **Generate `tasks/phase-1.md`** (§3) — deliberately not done here: §3 says planning runs in a chat session *without repository write access*. This also blocks the forward-looking half of the `docs/user-journeys.md` maintenance rule, which requires reading the next phase's task file.
+1. **`tasks/phase-1.md` must be generated** (`docs/META-PLAN.md` §3) as a dedicated planning session in this repository that writes the task file and no application code. Until it exists, the forward-looking half of the `docs/user-journeys.md` maintenance rule is also blocked, since that rule requires reading the next phase's task file.
+2. **Read `pnpm demo` output by hand and judge it** (§6, Phase 0 gate) — **the human's, and still outstanding.** The agent read it and fixed two defects it found: a misaligned total, and a day offset that would have broken across a month boundary. The gate asks for a human, and an agent checking its own output is not that check.
 
 **Decisions the human owns.** None block Phase 1. All five are set out with recommendations in `docs/phase-0-retro.md`:
 

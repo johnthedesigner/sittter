@@ -143,7 +143,11 @@ If anything did not verify cleanly, fix it in a follow-up scaffold session. Do n
 
 ## 3. Generating a phase task file
 
-Run in a **chat session**, not Claude Code. This is planning, and it should not have write access to the repository.
+Run as a **dedicated planning session in Claude Code**, in this repository.
+
+> **Changed 2026-08-19.** This section previously said to run planning in a chat session without repository write access. That reflected where the original planning happened — on claude.ai, before this repository existed — not a rule that planning must stay there. Now that the work has moved into Claude Code, it all continues here. What still matters is the part that was always the point: **planning is its own session, and it writes the task file and nothing else.**
+
+**A planning session writes `tasks/phase-N.md` and no application code.** Not a stub, not a type, not a test. Mixing planning with implementation is how a task file ends up describing what was convenient to build rather than what the phase needs.
 
 **Generate one phase ahead.** Have Phase N+1's file ready before Phase N finishes.
 
@@ -166,7 +170,7 @@ Requirements:
 Do not write any application code.
 ```
 
-Then review it yourself against these questions:
+Then review it against these questions — read the generated file yourself rather than taking the summary for it, since a task file that is wrong here is wrong in every session that follows:
 
 - Are the tasks in the right order? Can each be implemented without depending on something not yet built?
 - Are the acceptance criteria specific enough to verify without ambiguity? Would a stranger get the same answer you would?
@@ -367,7 +371,7 @@ Do not write any new features. Diagnose and fix the failing tests only.
 
 **The agent resolved a spec open question on its own.** Revert the behavior change, restore the specified behavior, and record the agent's observation in `SESSION_LOG.md` where it belongs. The open question stays open until you close it.
 
-**The spec and dev plan conflict, or have a gap.** Stop work on the affected task. Resolve the ambiguity in a chat session, update the documents, then resume. Never let the implementing agent resolve a spec ambiguity by choosing.
+**The spec and dev plan conflict, or have a gap.** Stop work on the affected task. Resolve the ambiguity as a deliberate, separate step — decide it, update the documents, commit that, then resume the task. The venue does not matter and it can happen in this session; what matters is that resolving it is its own decision with your name on it. Never let the implementing agent resolve a spec ambiguity by choosing mid-task, and never let the resolution ride along in an implementation commit.
 
 **The agent is stuck in a loop.** Ask it to describe the blocker in prose, without proposing a fix. Loops are almost always a missing piece of context, and the description surfaces it.
 

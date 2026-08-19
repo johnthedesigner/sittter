@@ -188,7 +188,7 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [ ] `docs/user-journeys.md` reviewed per its maintenance rule — **partially.** Phase 0 enabled no journey steps, so nothing needed revising. The forward-looking half of the rule requires reading `tasks/phase-1.md`, which does not exist yet.
 - [x] Phase retrospective written to `docs/phase-0-retro.md`
 - [ ] Housekeeping session run — human-owned, `docs/META-PLAN.md` §8
-- [ ] `tasks/phase-1.md` generated, reviewed, and committed — human-owned, `docs/META-PLAN.md` §3, runs in a chat session without repository write access
+- [ ] `tasks/phase-1.md` generated, reviewed, and committed — `docs/META-PLAN.md` §3, a dedicated planning session in this repository that writes the task file and no application code
 
 *Note: `pnpm test:integration` and `pnpm test:e2e` are expected to exit cleanly with zero tests in this phase. That is a pass, not a skip.*
 
