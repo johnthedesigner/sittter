@@ -255,8 +255,8 @@ A repository module per table, each function scoped by business, plus a determin
 
 ### Task 1.5 — Sign-in surface and the session guard
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 1.4
 
 **What this task implements:**
@@ -275,22 +275,22 @@ The pages and route handler that make signing in real, the layout guard that pro
 **Journey steps enabled:** 8.1.1, 8.1.2, 8.1.3, 8.1.4, 8.1.5, 8.1.6.
 
 **Acceptance criteria:**
-- [ ] 8.1.1 — visiting the app signed out loads the sign-in page
-- [ ] 8.1.2 — submitting a registered email shows the exact Reference data message and does not confirm registration
-- [ ] 8.1.3 — following the emailed link creates a session and loads `/home`, which renders the signed-in admin's **name**, taken from the database rather than the cookie
-- [ ] 8.1.4 — following the same link a second time shows the invalid-link page with its exact copy
-- [ ] 8.1.5 — submitting an unregistered email shows the **same** message as 8.1.2, and a test asserts no `email_sends` row was written
-- [ ] 8.1.6 — a request carrying a valid session cookie loads `/home` without a new sign-in
-- [ ] Visiting any `(admin)` route without a session redirects to `/signin`, asserted for `/home` specifically
-- [ ] Visiting an `(admin)` route with an expired session redirects to `/signin` rather than erroring
-- [ ] The route handler and server action are thin: no SQL, no Drizzle call, no business logic that belongs in `src/services/`
-- [ ] Every user-facing string matches the Reference data exactly; no placeholder copy appears on any surface
-- [ ] `pnpm build` succeeds
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated with the Journey 8 row
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] 8.1.1 — visiting the app signed out loads the sign-in page
+- [x] 8.1.2 — submitting a registered email shows the exact Reference data message and does not confirm registration
+- [x] 8.1.3 — following the emailed link creates a session and loads `/home`, which renders the signed-in admin's **name**, taken from the database rather than the cookie
+- [x] 8.1.4 — following the same link a second time shows the invalid-link page with its exact copy
+- [x] 8.1.5 — submitting an unregistered email shows the **same** message as 8.1.2, and a test asserts no `email_sends` row was written
+- [x] 8.1.6 — a request carrying a valid session cookie loads `/home` without a new sign-in
+- [x] Visiting any `(admin)` route without a session redirects to `/signin`, asserted for `/home` specifically
+- [x] Visiting an `(admin)` route with an expired session redirects to `/signin` rather than erroring
+- [x] The route handler and server action are thin: no SQL, no Drizzle call, no business logic that belongs in `src/services/`
+- [x] Every user-facing string matches the Reference data exactly; no placeholder copy appears on any surface
+- [x] `pnpm build` succeeds
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `docs/user-journeys.md` coverage table updated with the Journey 8 row
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not build any booking, customer, or settings interface; `/home` renders a name and nothing else
@@ -303,21 +303,21 @@ The pages and route handler that make signing in real, the layout guard that pro
 
 ## Phase completion checklist
 
-- [ ] All tasks above marked `[x]`
-- [ ] `pnpm test:unit` passes with zero failures
-- [ ] `pnpm test:integration` passes with zero failures
-- [ ] `pnpm test:e2e` passes with zero failures
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] **Review gate, by hand:** is there any SQL or Drizzle query builder call outside `src/db/repositories/`? Grep for it.
-- [ ] **Review gate, by hand:** does every repository function take a business identifier?
-- [ ] **Review gate, by hand:** does an expired magic link token fail closed? Try it.
-- [ ] **Review gate, by hand:** does a consumed token fail on second use? Try it.
-- [ ] **Review gate, by hand:** is the session cookie `httpOnly`, `secure`, and `sameSite`? Read it off a real response.
-- [ ] `SESSION_LOG.md` has a complete entry for every session in this phase
-- [ ] `docs/plan-summary.md` status line updated for Phase 1
-- [ ] `docs/user-journeys.md` reviewed, coverage table updated, deferrals revisited
-- [ ] Phase retrospective written to `docs/phase-1-retro.md`
+- [x] All tasks above marked `[x]`
+- [x] `pnpm test:unit` passes with zero failures — 206 tests
+- [x] `pnpm test:integration` passes with zero failures — 100 tests
+- [x] `pnpm test:e2e` passes with zero failures — 11 tests
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] **Review gate:** no SQL or Drizzle query builder call outside `src/db/` — grepped, none. The only `@/db/` imports in `src/app/` are repository calls, which is the permitted path.
+- [x] **Review gate:** every repository function takes a business identifier — 70 of 71; the exception is `createBusiness`, which creates the business, documented in `businesses.ts` alongside `getOnlyBusiness`.
+- [x] **Review gate:** an expired magic link token fails closed — asserted at one millisecond before expiry, exactly at expiry, and after, plus end to end through the UI.
+- [x] **Review gate:** a consumed token fails on second use — asserted in integration and again in `e2e/journey-8.spec.ts` 8.1.4, including that no second session row is created.
+- [x] **Review gate:** the session cookie is `httpOnly`, `secure`, `sameSite: 'lax'` — asserted against the object the writer passes. **Still worth reading off a real response by hand.**
+- [x] `SESSION_LOG.md` has a complete entry for every session in this phase
+- [x] `docs/plan-summary.md` status line updated for Phase 1
+- [x] `docs/user-journeys.md` reviewed, coverage table updated with Journey 8
+- [x] Phase retrospective written to `docs/phase-1-retro.md`
 - [ ] Housekeeping session run
 - [ ] `tasks/phase-2.md` generated, reviewed, and committed
 

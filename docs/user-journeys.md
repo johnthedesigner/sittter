@@ -257,7 +257,12 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 
 | Journey steps | Test file | Test name | Phase |
 |---|---|---|---|
-| *(none yet)* | | | |
+| 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
+| 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |
+| 8.1.3 | `e2e/journey-8.spec.ts` | following the link creates a session and loads home | 1 |
+| 8.1.4 | `e2e/journey-8.spec.ts` | the same link a second time no longer works | 1 |
+| 8.1.5 | `e2e/journey-8.spec.ts` | an unregistered email shows the SAME message | 1 |
+| 8.1.6 | `e2e/journey-8.spec.ts` | the session survives a new browser context on the same device | 1 |
 
 > **Phase boundary review, 2026-08-19 (Phase 0 → Phase 1).** `tasks/phase-1.md` read in full. Phase 0 enabled no journey steps — it produced `src/core/` and no user-facing surface. Phase 1 enables Journey 8 (8.1.1–8.1.6) and nothing else; Journey 8 already describes that behavior completely, so no journey was added, extended, or revised, and no deferral became testable. The row for Journey 8 is added when Task 1.5 completes, per the per-task rule.
 

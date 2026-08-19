@@ -3,7 +3,7 @@
 > **Purpose:** the fastest way to answer "where are we". One paragraph per phase, one status line each.
 > **Maintenance:** status lines are updated at each phase completion. Paragraphs are kept in sync with `docs/dev-plan.md` and revised only when the plan itself changes.
 
-**Project status:** Phase 0 complete. Pre-flight spikes run and recorded; both assumptions hold. `src/core/` is built and tested. No database, no server, no user-facing surface yet.
+**Project status:** Phase 1 complete. `src/core/` is built and tested, the schema is live on Neon, repositories are the only path to it, and an admin can sign in with a magic link. 317 tests across three suites. No booking interface and no customer surfaces yet.
 
 ---
 
@@ -15,7 +15,7 @@ Every non-trivial calculation in the product is built as a side-effect-free func
 
 ## Phase 1 — Persistence and admin authentication
 
-**Status:** Not started
+**Status:** Complete — 2026-08-19. 21 tables, 15 repository modules, magic-link auth, Journey 8 covered end to end. Retrospective in `docs/phase-1-retro.md`.
 
 The schema is created and migrated, repositories become the only path to the database, and an admin can sign in with a magic link. Email sending exists here because magic links need it, which means the email service and its send log are in place before any feature depends on them. The phase ends with one stub page rendering the signed-in admin's name, proving the whole chain from cookie to database works. No booking interface, no customer surfaces.
 
@@ -62,7 +62,7 @@ The visual design pass across every surface, with customer-facing pages prioriti
 | Phase | Started | Completed | Sessions | Retro |
 |---|---|---|---|---|
 | 0 | 2026-08-17 | 2026-08-19 | 8 | `docs/phase-0-retro.md` |
-| 1 | — | — | — | — |
+| 1 | 2026-08-19 | 2026-08-19 | 5 | `docs/phase-1-retro.md` |
 | 2 | — | — | — | — |
 | 3 | — | — | — | — |
 | 4 | — | — | — | — |

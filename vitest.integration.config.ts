@@ -19,11 +19,17 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 30_000,
   },
-  // tsconfig sets jsx: "preserve", which Next requires and which Vite reads
-  // directly — leaving JSX untransformed and failing as "content contains
-  // invalid JS syntax". Email templates under src/emails/ are .tsx and are
-  // rendered inside these tests, so the setting is overridden for the test
-  // transform only. Path aliases still come from resolve.alias below.
+  // Vite reads `jsx` straight from tsconfig. When it is "preserve", .tsx
+  // fails here as "content contains invalid JS syntax" — which is what
+  // happened before the first `pnpm build`, at which point Next 16 rewrote
+  // tsconfig to "react-jsx" itself ("mandatory changes were made to your
+  // tsconfig.json"). This override is kept so the suite does not depend on
+  // Next having rewritten the file, and so a fresh clone that runs tests
+  // before it ever builds still works.
+  //
+  // The key is `oxc`, NOT `esbuild`: Vite 8 replaced esbuild with oxc and
+  // silently ignores the old key, which makes a wrong guess here look like
+  // the option having no effect at all.
   oxc: { jsx: { runtime: 'automatic' } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
