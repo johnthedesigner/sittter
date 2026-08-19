@@ -9,10 +9,9 @@
 
 **Tests:** 206 unit, 100 integration, 11 end-to-end. `pnpm build`, `pnpm typecheck`, `pnpm lint`, and `prettier --check` all pass.
 
-**Phase 1 gate: closed except two items.**
+**Phase 1 gate: fully closed.** Housekeeping run, `tasks/phase-2.md` generated and reviewed, journeys reviewed at the boundary.
 
-1. **Housekeeping session** — `docs/META-PLAN.md` §8. Not yet run for Phase 1.
-2. **`tasks/phase-2.md`** — `docs/META-PLAN.md` §3, a dedicated planning session in this repository that writes the task file and no application code.
+**Phase 2 may begin at Task 2.1.** Seven tasks, not the four to six `docs/META-PLAN.md` §3 asks for — the file says why rather than compressing. Two items in it are review gates rather than code: the **thirty-second capture measurement on a real phone**, and the **`docs/spec.md` §10 evaluation** of the isolated availability-check submission.
 
 **One small thing for the human:** read the session cookie's attributes off a real response by hand. They are asserted against the object the writer passes, so they cannot drift — but the phase gate asks for a human to look, and that has not been done.
 

@@ -151,8 +151,8 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [x] `docs/plan-summary.md` status line updated for Phase 1
 - [x] `docs/user-journeys.md` reviewed, coverage table updated with Journey 8
 - [x] Phase retrospective written to `docs/phase-1-retro.md`
-- [ ] Housekeeping session run
-- [ ] `tasks/phase-2.md` generated, reviewed, and committed
+- [x] Housekeeping session run — 2026-08-19
+- [x] `tasks/phase-2.md` generated, reviewed, and committed — 2026-08-19. Seven tasks, not the four to six §3 asks for; the file states why rather than compressing.
 
 ---
 

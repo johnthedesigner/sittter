@@ -264,6 +264,12 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 8.1.5 | `e2e/journey-8.spec.ts` | an unregistered email shows the SAME message | 1 |
 | 8.1.6 | `e2e/journey-8.spec.ts` | the session survives a new browser context on the same device | 1 |
 
+> **Phase boundary review, 2026-08-19 (Phase 1 → Phase 2).** `tasks/phase-2.md` read in full. Phase 2 enables 30 steps across Journeys 1, 4, and 9 — every step of Journey 1 except **1.3.8**, all of 4.3, and all of 9.1. No journey needed adding, extending, or revising: the task file was written from these journeys rather than the reverse.
+>
+> **1.3.8 is deliberately not a Phase 2 step.** It expects a confirmation email carrying a portal link. `docs/spec.md` §5.5 describes that email as part of the confirmation stage, but links do not exist until Phase 3 — so the state transition happens in Phase 2 and the notification in Phase 3. `tasks/phase-2.md` Task 2.4 carries an explicit must-not-do saying so, because it is an easy thing to pull in by mistake while reading §5.5.
+>
+> Journey 4 steps 4.1 and 4.2 remain uncovered: they are visit logging with photos, which is Phase 4.
+
 > **Phase boundary review, 2026-08-19 (Phase 0 → Phase 1).** `tasks/phase-1.md` read in full. Phase 0 enabled no journey steps — it produced `src/core/` and no user-facing surface. Phase 1 enables Journey 8 (8.1.1–8.1.6) and nothing else; Journey 8 already describes that behavior completely, so no journey was added, extended, or revised, and no deferral became testable. The row for Journey 8 is added when Task 1.5 completes, per the per-task rule.
 
 ### Steps not covered by automated tests
