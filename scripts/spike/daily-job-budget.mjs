@@ -37,7 +37,6 @@ const PROPERTIES = [
   { name: 'Property C', latitude: 40.9312, longitude: -73.8987 },
 ]
 
-const elapsed = (from) => `${Math.round(performance.now() - from)}ms`
 const started = performance.now()
 const timings = {}
 
@@ -74,7 +73,9 @@ const weather = await Promise.all(
 )
 
 timings.weather = performance.now() - weatherStart
-console.log(`1. Weather — ${PROPERTIES.length} properties in parallel: ${Math.round(timings.weather)}ms`)
+console.log(
+  `1. Weather — ${PROPERTIES.length} properties in parallel: ${Math.round(timings.weather)}ms`
+)
 for (const { property, daily } of weather) {
   console.log(
     `   ${property.name}: observed ${daily.time[0]} ` +
@@ -135,7 +136,9 @@ if (DRY_RUN) {
   )
 
   timings.email = performance.now() - emailStart
-  console.log(`\n3. Email — ${RECIPIENTS.length} send(s) in parallel: ${Math.round(timings.email)}ms`)
+  console.log(
+    `\n3. Email — ${RECIPIENTS.length} send(s) in parallel: ${Math.round(timings.email)}ms`
+  )
   for (const r of results) {
     if (r.ok) {
       console.log(`   ${r.to}: sent, id ${JSON.parse(r.body).id}`)

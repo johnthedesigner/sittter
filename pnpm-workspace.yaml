@@ -1,0 +1,5 @@
+# pnpm 11 reads build-script approval from here, not from package.json.
+# esbuild backs vitest and tsx; unrs-resolver backs the ESLint resolver.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

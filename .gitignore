@@ -12,3 +12,6 @@ test-results
 *-service-account*.json
 *service-account-key*.json
 gcp-key*.json
+next-env.d.ts
+.tsbuildinfo
+*.tsbuildinfo

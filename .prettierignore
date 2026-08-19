@@ -1,0 +1,16 @@
+node_modules
+.next
+coverage
+playwright-report
+test-results
+drizzle
+pnpm-lock.yaml
+
+# Authored prose, not code. Prettier reflows markdown tables and wrapping,
+# which would churn the planning corpus and bury real edits in diff noise.
+# These documents are maintained by hand.
+AGENTS.md
+SESSION_LOG.md
+docs/
+tasks/
+logs/
