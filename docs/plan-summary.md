@@ -3,13 +3,13 @@
 > **Purpose:** the fastest way to answer "where are we". One paragraph per phase, one status line each.
 > **Maintenance:** status lines are updated at each phase completion. Paragraphs are kept in sync with `docs/dev-plan.md` and revised only when the plan itself changes.
 
-**Project status:** Planning complete. No code written. Pre-flight spikes not yet run.
+**Project status:** Phase 0 complete. Pre-flight spikes run and recorded; both assumptions hold. `src/core/` is built and tested. No database, no server, no user-facing surface yet.
 
 ---
 
 ## Phase 0 — Pure core
 
-**Status:** Not started
+**Status:** Complete — 2026-08-19. 7 modules, 206 unit tests, 99.29% statement coverage. Retrospective in `docs/phase-0-retro.md`.
 
 Every non-trivial calculation in the product is built as a side-effect-free function before any infrastructure exists. This covers calendar date arithmetic, booking status derivation, the pricing engine, visit schedule generation from cadences, digest model composition, and slug generation. Nothing in this phase touches a database, a network, or a screen. It ends with a demo script that prints a priced booking, a generated visit schedule, and a rendered digest model to the terminal for hand inspection, because there is no other way to judge quality on a phase with no visual output.
 
@@ -61,7 +61,7 @@ The visual design pass across every surface, with customer-facing pages prioriti
 
 | Phase | Started | Completed | Sessions | Retro |
 |---|---|---|---|---|
-| 0 | — | — | — | — |
+| 0 | 2026-08-17 | 2026-08-19 | 8 | `docs/phase-0-retro.md` |
 | 1 | — | — | — | — |
 | 2 | — | — | — | — |
 | 3 | — | — | — | — |

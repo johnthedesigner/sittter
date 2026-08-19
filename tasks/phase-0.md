@@ -323,8 +323,8 @@ The single function that decides what a booking is called, and the mapping that 
 
 ### Task 0.6 — Slug generation and the demo harness
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Tasks 0.1 through 0.5
 
 **What this task implements:**
@@ -339,18 +339,18 @@ Slug generation with its reserved and blocked word checks, and the demo script t
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] `generateSlug` produces a 5-character string drawn only from the alphabet in Reference data
-- [ ] `generateSlug` takes a random source as an argument and does not call `Math.random()`
-- [ ] Given a seeded random source that would produce a reserved word, `generateSlug` retries and returns a different, valid slug
-- [ ] Given a seeded random source that would produce a blocked word, `generateSlug` retries and returns a different, valid slug
-- [ ] `normalizeSlug('ab3k9')` and `normalizeSlug('AB3K9')` return the same value
-- [ ] `normalizeSlug` on a string containing a character outside the alphabet returns null
-- [ ] `pnpm demo` runs to completion and prints, in order: an itemized priced booking matching the worked example, a generated visit schedule for a 7 day range with two instructions of different cadences, and a digest model for a mid-booking day rendered as readable text
-- [ ] `pnpm demo` reads no environment variable, opens no network connection, and writes no file
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] `generateSlug` produces a 5-character string drawn only from the alphabet in Reference data
+- [x] `generateSlug` takes a random source as an argument and does not call `Math.random()`
+- [x] Given a seeded random source that would produce a reserved word, `generateSlug` retries and returns a different, valid slug
+- [x] Given a seeded random source that would produce a blocked word, `generateSlug` retries and returns a different, valid slug
+- [x] `normalizeSlug('ab3k9')` and `normalizeSlug('AB3K9')` return the same value
+- [x] `normalizeSlug` on a string containing a character outside the alphabet returns null
+- [x] `pnpm demo` runs to completion and prints, in order: an itemized priced booking matching the worked example, a generated visit schedule for a 7 day range with two instructions of different cadences, and a digest model for a mid-booking day rendered as readable text
+- [x] `pnpm demo` reads no environment variable, opens no network connection, and writes no file
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not implement link storage, resolution, expiry, revocation, or rate limiting — that is Phase 3
@@ -361,18 +361,18 @@ Slug generation with its reserved and blocked word checks, and the demo script t
 
 ## Phase completion checklist
 
-- [ ] All tasks above marked `[x]`
-- [ ] `pnpm test:unit` passes with zero failures
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `pnpm demo` output read by a human and judged correct, not merely non-throwing
-- [ ] ESLint's restricted-import rule for `src/core/` is active and demonstrably fails on a deliberate violation
-- [ ] `SESSION_LOG.md` has a complete entry for every session in this phase
-- [ ] `docs/plan-summary.md` status line updated for Phase 0
-- [ ] `docs/user-journeys.md` reviewed per its maintenance rule
-- [ ] Phase retrospective written to `docs/phase-0-retro.md`
-- [ ] Housekeeping session run
-- [ ] `tasks/phase-1.md` generated, reviewed, and committed
+- [x] All tasks above marked `[x]`
+- [x] `pnpm test:unit` passes with zero failures — 206 tests, 7 files
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [ ] `pnpm demo` output read by a **human** and judged correct, not merely non-throwing — **awaiting the human.** The agent read it and corrected two defects it found; that is not the same check.
+- [x] ESLint's restricted-import rule for `src/core/` is active and demonstrably fails on a deliberate violation — proved during the scaffold session and re-proved after every config change
+- [x] `SESSION_LOG.md` has a complete entry for every session in this phase
+- [x] `docs/plan-summary.md` status line updated for Phase 0
+- [ ] `docs/user-journeys.md` reviewed per its maintenance rule — **partially.** Phase 0 enabled no journey steps, so nothing needed revising. The forward-looking half of the rule requires reading `tasks/phase-1.md`, which does not exist yet.
+- [x] Phase retrospective written to `docs/phase-0-retro.md`
+- [ ] Housekeeping session run — human-owned, `docs/META-PLAN.md` §8
+- [ ] `tasks/phase-1.md` generated, reviewed, and committed — human-owned, `docs/META-PLAN.md` §3, runs in a chat session without repository write access
 
 *Note: `pnpm test:integration` and `pnpm test:e2e` are expected to exit cleanly with zero tests in this phase. That is a pass, not a skip.*
 

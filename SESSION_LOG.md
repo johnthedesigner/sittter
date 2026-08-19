@@ -2,25 +2,92 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — In progress, 5 of 6 tasks complete
-**Next task:** 0.6 — Slug generation and the demo harness
-**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`, `schedule.ts`, `digest.ts`. 180 unit tests, all passing. Scaffold and tooling complete. No slug, no demo harness, no database.
+**Phase:** 0 — Pure core — **COMPLETE, 2026-08-19.** Retrospective in `docs/phase-0-retro.md`.
+**Next phase:** 1 — Persistence and admin authentication. **Not started, and blocked on human-owned work — see below.**
 
-**Available to Task 0.6:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; all of `dates.ts`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`; `generateVisits`; `buildDigestModel`.
+**What's built:** `src/core/` in full — `types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`, `schedule.ts`, `digest.ts`, `slug.ts` — with 206 unit tests at 99.29% statement and 100% function coverage. `scripts/demo.ts` prints a priced booking, a visit schedule, a digest model, and slugs. Scaffold and tooling complete and verified. **No database, no schema, no migrations, no server, no user-facing surface.**
 
-**Notes for Task 0.6:**
-- The demo harness must print a priced booking, a generated visit schedule, and a rendered digest model. All three functions exist and are listed above.
-- `scripts/demo.ts` is already wired: `pnpm demo` runs `tsx scripts/demo.ts`. The file does not exist yet.
-- `generateSlug` needs an injected random source — `src/core/` may not call `Math.random()`, and the ESLint rule enforces it. The slug alphabet, reserved list, and the `obscenity` filtering approach are resolved in the `tasks/phase-0.md` Reference data.
-- **`obscenity` is a runtime dependency and is already installed**, but `src/core/` may not import packages that perform input or output. Confirm `obscenity` is pure before importing it from `src/core/slug.ts`; if it is not, the blocked-word check belongs behind an injected argument.
+**Before Phase 1 can start, three things are the human's, per `docs/META-PLAN.md`:**
+
+1. **Read `pnpm demo` output by hand and judge it** (§6, Phase 0 gate). The agent read it and fixed two defects it found — a misaligned total and a day offset that would have broken across a month boundary — but the gate asks for a human, and an agent checking its own output is not that check.
+2. **Housekeeping session** (§8) — compress completed task entries, archive Phase 0 session entries to `logs/phase-0.md`, review the AGENTS.md Patterns established section.
+3. **Generate `tasks/phase-1.md`** (§3) — in a chat session without repository write access. This also unblocks the forward-looking half of the `docs/user-journeys.md` maintenance rule, which requires reading the next phase's task file and cannot be done while that file does not exist.
+
+**Decisions the human owns.** None block Phase 1. All five are set out with recommendations in `docs/phase-0-retro.md`:
+
+1. **The `src/core/` import rule versus `obscenity`.** AGENTS.md's heading says "imports nothing that performs input or output"; its body says "only `src/core/` and Node built-ins". `src/core/slug.ts` imports `obscenity`, which performs no input or output but is neither. Task 0.6 required the check in that file and forbade vendoring a word list, so there was no third option. Flagged, not resolved. Recommendation: amend the body to match the heading.
+2. **The Vercel cron schedule**, before Phase 6.
+3. **The TypeScript 6 pin**, whenever `typescript-eslint` supports TS 7.
+4. **`docs/spec.md` §5.12 and two-step calendar onboarding**, before Phase 5.
+5. **AGENTS.md lists `src/app/api/photos/[id]/route.ts`; `docs/dev-plan.md` §3 does not.**
+
+**A correction owed to `tasks/phase-0.md` Reference data.** The blocked-slug note says to filter the `obscenity` dataset "to entries that are exactly five characters". The dataset holds parsed patterns with wildcards, not plain words, so there is nothing to filter. The working approach is a `RegExpMatcher` tested against each candidate. Worth fixing before Phase 3 reads it as gospel.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
-**Open questions:** Three deferred items in `docs/spec.md` §10, not to be resolved during implementation. The Phase 5 calendar-onboarding question was resolved by the human on 2026-08-19. Two items still need a human decision, neither blocking Phase 0: **the Vercel cron schedule** (before Phase 6) and **the TypeScript 6 pin** (whenever typescript-eslint supports TS 7).
+**Open questions in the spec:** the three deferred items in `docs/spec.md` §10 remain open and are not to be resolved during implementation.
 
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.6: Slug generation and the demo harness — PHASE 0 COMPLETE
+
+**What was done:**
+- `src/core/slug.ts` — `ALPHABET`, `SLUG_LENGTH`, `RESERVED`, `RandomSource`, `generateSlug`, `isReserved`, `isBlocked`, `normalizeSlug`
+- `src/core/slug.test.ts` — 26 tests
+- `scripts/demo.ts` — the phase's hand-inspectable output
+- `docs/phase-0-retro.md`, `docs/plan-summary.md` — phase closure
+
+**The flagged conflict, stated plainly.**
+
+`src/core/slug.ts` imports `obscenity`. AGENTS.md says `src/core/` "may import only from `src/core/` and from Node built-ins that perform no input or output". Task 0.6 requires `isBlocked` in that file, and its must-not-do list forbids vendoring an offensive-word list into the repository. There is no third option, so the conflict is real rather than avoidable.
+
+It was resolved toward the task, and **flagged rather than resolved silently**, which is what AGENTS.md asks. The justification: the rule's own heading is "`src/core/` is pure and imports nothing that performs input or output", and `obscenity` performs none — verified, no `fs`, `net`, `http`, or `child_process` anywhere in its distribution. The heading and the body are two different rules and the difference now matters. The recommendation in the retrospective is to amend the body to match the heading. Until the human decides, the import is a documented exception and not a precedent; the file says so at the top.
+
+**A correction owed to the reference data.**
+
+`tasks/phase-0.md` says to filter the `obscenity` dataset "to entries that are exactly five characters and composable from the alphabet". That is not possible: the dataset stores parsed patterns with wildcards and optional characters, not plain words, and `originalWord` is not reachable from the built dataset. The working approach is a `RegExpMatcher` built once at module load and tested against each candidate — the package's intended API. Measured rejection rate on 200,000 random slugs: **0.171%**, so retries are negligible. The recommended transformers catch leet-speak, which matters because the alphabet contains digits: `FK54T` is rejected, and there is a test asserting exactly that.
+
+**Decisions made:**
+
+- **`RandomSource` is injected**, because `src/core/` may not call `Math.random()` and the lint rule enforces it. The payoff is that "suppose the source would produce a reserved word" became a deterministic test rather than a hope.
+- **`MAX_ATTEMPTS` of 100, then throw.** A degenerate source pinned to a reserved word would otherwise spin forever. Unreachable with real randomness at a 0.171% rejection rate.
+- **The index is clamped before indexing the alphabet.** A source returning exactly 1 would otherwise read past the end and put the literal string `undefined` into a slug. There is a test for it.
+- **`normalizeSlug` does NOT fold `I` and `O` onto `1` and `0`.** Crockford base32 defines that mapping, but this repository has not adopted it, and inventing it here would silently make two different links resolve to one. Out-of-alphabet characters return null.
+- **`normalizeSlug` tolerates surrounding whitespace,** because slugs get pasted out of text messages.
+- **`RESERVED` is checked against arbitrary input, not just generated slugs.** Most entries can never be generated — `about` contains `o` and `u` — but the check will also serve a slug requested by hand in Phase 3. There is a test asserting that `TERMS` is the only reserved word composable from the alphabet, which is what keeps the check from being decorative.
+
+**A test fixture bug worth recording.**
+
+The retry test originally used `ADMIN` as a candidate the random source should reject. `ADMIN` contains `I`, which is not in the alphabet, so the fixture silently produced `ADM0N` — not reserved — and the test failed for a reason unrelated to the code. The fixture now throws when asked to produce a character outside the alphabet, so the same mistake fails loudly instead of quietly passing for the wrong reason.
+
+**Two defects the demo harness caught that no test would have.**
+
+Reading `pnpm demo` output by hand found a misaligned TOTAL column, and a day offset computed by slicing the last two characters off a date string — which would have been silently wrong the first time a service range crossed a month boundary. Both were in the script rather than in `src/core/`, and both are exactly the class of thing `docs/META-PLAN.md` §6 asks a human to look for on a phase with no visual output.
+
+**Not done:**
+- **No link storage, resolution, expiry, revocation, or rate limiting.** Phase 3.
+- **No offensive-word list vendored.**
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+- **`pnpm demo` has not been read by a human.** Left unchecked in the phase completion checklist.
+
+**Verification — Phase 0 final:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 206 tests, 7 files, zero failures |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| `pnpm demo` | PASS — runs to completion, reads no environment variable, opens no network connection, writes no file |
+| Coverage, all of `src/core/` | 99.29% statements, 98.37% branches, **100% functions** |
+| `grep` for `Date.now`, `Math.random`, `process.env`, `new Date()` in `src/core/` | Two hits, both in comments explaining their absence |
+| `src/core/` boundary rule on a deliberate violation | 4 errors, exit 1 — rule fires |
+
+---
 
 ## 2026-08-19 — Task 0.5: Digest model composition
 
