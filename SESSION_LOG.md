@@ -2,22 +2,62 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — Not started
-**Next task:** 0.1 — Domain types and calendar date arithmetic
-**What's built:** Scaffold only. No application code — every directory under `src/` is empty. Structure, configuration, and tooling per `docs/dev-plan.md` §3, plus two throwaway pre-flight scripts under `scripts/spike/`. No database, no schema, no migrations.
+**Phase:** 0 — Pure core — In progress, 1 of 6 tasks complete
+**Next task:** 0.2 — Status derivation and customer-facing presentation
+**What's built:** `src/core/types.ts` (the full domain type vocabulary from `docs/dev-plan.md` §6) and `src/core/dates.ts` (calendar date arithmetic) with 41 unit tests. Scaffold and tooling complete. Nothing else — no status derivation, no pricing, no scheduling, no digest, no slug, no demo harness, no database.
 
-**Gate status before Task 0.1: both gates closed. Task 0.1 may begin.**
+**Available to Task 0.2:** `CalendarDate` and every domain type from §6; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`.
 
-1. ~~Pre-flight spikes~~ — complete, both assumptions hold.
-2. ~~Scaffold session~~ — complete. `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`, and `prettier --check` all pass. The `src/core/` boundary rule was proved to fire before being trusted.
+**Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
-**Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned — see below), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
-
-**Open questions:** Three deferred items in `docs/spec.md` §10, each with a review trigger, not to be resolved during implementation. The Phase 5 calendar-onboarding question raised by Spike 1 was resolved by the human on 2026-08-19. Two new items need a human decision before the phases that depend on them — **the Vercel cron schedule (Phase 6)** and **the TypeScript 6 pin (any phase)** — both recorded in the scaffold entry below. Neither blocks Phase 0.
+**Open questions:** Three deferred items in `docs/spec.md` §10, not to be resolved during implementation. The Phase 5 calendar-onboarding question was resolved by the human on 2026-08-19. Two items still need a human decision, neither blocking Phase 0: **the Vercel cron schedule** (before Phase 6) and **the TypeScript 6 pin** (whenever typescript-eslint supports TS 7). Both are recorded in the scaffold entry.
 
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.1: Domain types and calendar date arithmetic
+
+**What was done:**
+- `src/core/types.ts` — every type from `docs/dev-plan.md` §6, including the branded `CalendarDate`. Two enumerations were extracted to named aliases (`TimeWindow`, `PricingComponentType`) because §6 spells the same unions inline in more than one place and later tasks need to name them.
+- `src/core/dates.ts` — `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween`, `expandRange`, `isWithinRange`, `compareDates`, `todayIn`.
+- `src/core/dates.test.ts` — 41 tests. Every acceptance criterion in the task has a test that names it.
+
+**Decisions made:**
+
+- **No `Date` object appears in the calendar arithmetic.** `addDays`, `daysBetween`, `expandRange`, `isWithinRange`, and `compareDates` convert to an integer day number, do integer arithmetic, and convert back, using Howard Hinnant's `days_from_civil` / `civil_from_days`. This is what makes the daylight saving criteria pass by construction rather than by luck: no instant is ever constructed, so there is no 23 or 25 hour day to trip over. It also satisfies the AGENTS.md rule against round-tripping a calendar date through a `Date`.
+- **`todayIn` is the sole exception, and uses `Intl`, not field arithmetic.** Converting a real instant to a calendar date genuinely requires zone rules — only the zone database knows the offset in effect at that instant, and that offset is exactly what decides which day it is. It takes the instant as an argument and reads no clock.
+- **`daysBetween` counts inclusively.** `2026-08-01` to `2026-08-07` is 7. The task fixes this, and it is the per-day pricing basis. Documented at the function, because 7 rather than 6 is the kind of thing a later reader will assume is a bug.
+- **`daysBetween` returns 0 for an inverted range**, matching `expandRange` returning `[]` for the same input. The task specifies the array behavior but not the count; consistency between them seemed more valuable than an exception, and a range not yet filled in is a normal state rather than an error.
+- **The brand is not exported.** `toCalendarDate` is the only way to make a `CalendarDate`, so an unvalidated string cannot reach the domain.
+- **`DEFAULT_PRICING_COMPONENTS` from §6.1 was deliberately not written.** It is a constant belonging to pricing, and this task's must-not-do list excludes pricing. It belongs to Task 0.3.
+
+**A note on the purity test, because it required backing out of a first attempt.**
+
+The first version of the purity check read `dates.ts` as text and asserted the source contained no `Date.now(`. It needed `node:fs`, which the `src/core/` boundary rule correctly forbids — including in test files. Rather than add an exception to that rule, which AGENTS.md names as the most serious failure available in this project, the test was rewritten to replace `Date.now` and `Math.random` with throwing stubs at runtime and then exercise every exported function.
+
+That guard was then proved to fire, on the same principle applied to the lint rule during the scaffold: a temporary `Date.now()` was inserted into `addDays`, the test went red with `Error: src/core/dates.ts read the clock`, and the change was reverted. A guard never seen to fail is indistinguishable from one that cannot.
+
+**Not done:**
+- **Nothing from Tasks 0.2 through 0.6.** No status derivation, pricing, schedule generation, digest composition, slug generation, or demo harness.
+- **No date library added.** The must-not-do list forbids it and the arithmetic did not need one.
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+- **Two defensive `throw` paths are uncovered** — the guards in `toDayNumber` and `todayIn`. Both are unreachable through the public API because `CalendarDate` is branded, and testing them would mean casting a bad value past the type system to reach a line that exists only in case someone does. Recorded rather than papered over with a cast.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 41 tests, 1 file, 186 ms |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Coverage, `src/core/dates.ts` | 97.4% statements, 95.83% branches, 100% functions |
+| Purity guard against a deliberate `Date.now()` | Red, as designed, then reverted |
+
+---
 
 ## 2026-08-19 — Scaffold session
 

@@ -127,8 +127,8 @@ Timeline summaries truncate a visit note to a maximum of 60 characters, cutting 
 
 ### Task 0.1 — Domain types and calendar date arithmetic
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** none
 
 **What this task implements:**
@@ -142,19 +142,19 @@ The complete type vocabulary for the domain, and a set of calendar date function
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] `expandRange('2026-08-01', '2026-08-07')` returns exactly seven date strings, inclusive of both ends
-- [ ] `daysBetween('2026-08-01', '2026-08-07')` returns 7, counting inclusively, matching the per-day pricing basis
-- [ ] `addDays('2026-08-31', 1)` returns `'2026-09-01'`
-- [ ] `expandRange('2026-03-07', '2026-03-09')` returns exactly three dates, unaffected by the daylight saving transition inside that span
-- [ ] `expandRange('2026-11-01', '2026-11-01')` returns exactly one date
-- [ ] `expandRange` with an end date before the start date returns an empty array rather than throwing
-- [ ] `isValidCalendarDate('2026-02-30')` returns false
-- [ ] `todayIn(timezone, now)` takes an explicit instant as an argument and reads no clock
-- [ ] No function in `src/core/dates.ts` calls `Date.now()`, `new Date()` with no argument, or reads a timezone from the environment
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] `expandRange('2026-08-01', '2026-08-07')` returns exactly seven date strings, inclusive of both ends
+- [x] `daysBetween('2026-08-01', '2026-08-07')` returns 7, counting inclusively, matching the per-day pricing basis
+- [x] `addDays('2026-08-31', 1)` returns `'2026-09-01'`
+- [x] `expandRange('2026-03-07', '2026-03-09')` returns exactly three dates, unaffected by the daylight saving transition inside that span
+- [x] `expandRange('2026-11-01', '2026-11-01')` returns exactly one date
+- [x] `expandRange` with an end date before the start date returns an empty array rather than throwing
+- [x] `isValidCalendarDate('2026-02-30')` returns false
+- [x] `todayIn(timezone, now)` takes an explicit instant as an argument and reads no clock
+- [x] No function in `src/core/dates.ts` calls `Date.now()`, `new Date()` with no argument, or reads a timezone from the environment
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not implement status derivation, pricing, scheduling, or digests — those are Tasks 0.2 through 0.5
