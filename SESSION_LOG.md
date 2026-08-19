@@ -2,13 +2,13 @@
 
 ## Current State
 
-**Phase:** 0 — Pure core — In progress, 3 of 6 tasks complete
-**Next task:** 0.4 — Visit schedule generation
-**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`. 119 unit tests, all passing. Scaffold and tooling complete. No scheduling, no digest, no slug, no demo harness, no database.
+**Phase:** 0 — Pure core — In progress, 4 of 6 tasks complete
+**Next task:** 0.5 — Digest model composition
+**What's built:** `src/core/types.ts`, `dates.ts`, `status.ts`, `presentation.ts`, `pricing.ts`, `schedule.ts`. 143 unit tests, all passing. Scaffold and tooling complete. No digest, no slug, no demo harness, no database.
 
-**Available to Task 0.4:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`.
+**Available to Task 0.5:** every domain type from §6 plus `DEFAULT_PRICING_COMPONENTS`; `toCalendarDate`, `isValidCalendarDate`, `addDays`, `daysBetween` (inclusive), `expandRange`, `isWithinRange`, `compareDates`, `todayIn`; `deriveStatus`; `toCustomerFacingStatus`, `toCustomerFacingLabel`, `CUSTOMER_FACING_LABELS`, `truncateNote`; `priceBooking`; `generateVisits`.
 
-**Note for Task 0.4:** the cadence anchoring table in `tasks/phase-0.md` Reference data is the specification — offsets counted in days from the service range start, inclusive. Two instructions landing on the same date produce one visit carrying both task identifiers.
+**Note for Task 0.5:** `truncateNote` already exists from Task 0.2 and defaults to 60 characters, which is the digest timeline's truncation rule — do not write a second one. The `DigestModel`, `DigestBookingBlock`, `DigestTimelineDay`, `DigestWeather`, and `DigestAttentionItem` types are already defined in `types.ts`.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2.
 
@@ -17,6 +17,47 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 0.4: Visit schedule generation
+
+**What was done:**
+- `src/core/schedule.ts` — `generateVisits({ startDate, endDate, instructions })` returning `ScheduleResult`
+- `src/core/schedule.test.ts` — 24 tests
+
+**Decisions made:**
+
+- **The three stepping cadences are one branch, not three.** `every_day`, `every_other_day`, and `every_third_day` differ only by a step of 1, 2, or 3, held in a lookup. Writing them separately would have meant three near-identical loops and three places to get the `< dayCount` bound wrong.
+- **Collapsing is done with a `Map` keyed by date**, so two instructions landing on the same day accumulate into one visit's `taskIds`. The sitter makes one trip and does both things; two visit rows for one trip would be wrong in the schedule and wrong in per-visit pricing.
+- **Instructions are processed in `sortOrder`,** so `taskIds` on a collapsed visit read in the same order the instructions do on screen. The input array is copied before sorting; there is a test that the caller's array is untouched.
+- **`startDate` and `endDate` are required, not nullable.** A booking without dates cannot be scheduled, and making the type enforce that pushes the guard to the caller rather than hiding an empty result. An *inverted* range still yields no visits rather than throwing, matching `expandRange` — a range being edited is a normal state.
+- **`as_needed` and `custom` are reported, not silently dropped.** Each produces a `skippedInstructions` entry with a sentence explaining that visits are added by hand, so a surface can say so rather than leaving someone wondering why their instruction produced nothing.
+
+**A restructure to remove unreachable code rather than document it.**
+
+The first version filtered `as_needed` and `custom` with an early `continue`, which made the final `return []` in `offsetsFor` permanently unreachable — coverage flagged it at line 69. Documenting it as defensive, as was done for the genuine type-system guards in `dates.ts`, would have been the easy answer and the wrong one: those guards are unreachable because a brand makes them so, whereas this was unreachable because of how the loop happened to be written. Removing the `continue` lets one path serve every cadence, with the skip reason recorded alongside a naturally empty offset list. `schedule.ts` went from 97.29% to 100% statements, and the branch is gone rather than excused.
+
+**Not done:**
+- **No regeneration or preservation logic.** What happens to existing visits when a schedule is regenerated is Phase 2 service work, per the must-not-do list.
+- **No time windows assigned.** `GeneratedVisit` carries only `date` and `taskIds`; the service layer defaults to `anytime`. There is a test asserting the returned object has exactly those two keys, so a window cannot creep in unnoticed.
+- **Nothing from Tasks 0.5 or 0.6** — no digest, slug, or demo harness.
+- **Nothing created under `src/db/`, `src/services/`, or `src/app/`.**
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 143 tests, 5 files, 251 ms |
+| `pnpm test:integration` | PASS — zero tests, exit 0 |
+| `pnpm test:e2e` | PASS — zero tests, exit 0 |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Coverage, `schedule.ts` | 100% statements, branches, and functions |
+| Coverage, all of `src/core/` | 99% statements, 97.69% branches, 100% functions |
+
+Every row of the cadence anchoring table has a test asserting the exact dates produced, not merely the count.
+
+---
 
 ## 2026-08-19 — Task 0.3: Pricing engine
 

@@ -244,8 +244,8 @@ The single function that decides what a booking is called, and the mapping that 
 
 ### Task 0.4 — Visit schedule generation
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 0.1
 
 **What this task implements:**
@@ -258,21 +258,21 @@ The single function that decides what a booking is called, and the mapping that 
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] `every_day` over a 7 day range produces 7 visits
-- [ ] `every_other_day` over an 8 day range produces 4 visits, on offsets 0, 2, 4, 6
-- [ ] `every_other_day` over a 7 day range produces 4 visits, on offsets 0, 2, 4, 6
-- [ ] `every_third_day` over a 7 day range produces 3 visits, on offsets 0, 3, 6
-- [ ] `once_at_start` produces exactly one visit on the start date
-- [ ] `once_at_end` produces exactly one visit on the end date
-- [ ] `as_needed` and `custom` produce no visits and appear in `skippedInstructions` with a stated reason
-- [ ] A daily cat instruction and an every-other-day plant instruction over a 7 day range produce 7 visits, of which 4 carry both task identifiers and 3 carry one
-- [ ] A single-day range with `once_at_start` and `once_at_end` produces exactly one visit carrying both task identifiers
-- [ ] Returned visits are sorted ascending by date with no duplicate dates
-- [ ] An empty instruction list produces zero visits and does not throw
-- [ ] Tests pass: `pnpm test:unit`
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm lint` passes with zero errors
-- [ ] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
+- [x] `every_day` over a 7 day range produces 7 visits
+- [x] `every_other_day` over an 8 day range produces 4 visits, on offsets 0, 2, 4, 6
+- [x] `every_other_day` over a 7 day range produces 4 visits, on offsets 0, 2, 4, 6
+- [x] `every_third_day` over a 7 day range produces 3 visits, on offsets 0, 3, 6
+- [x] `once_at_start` produces exactly one visit on the start date
+- [x] `once_at_end` produces exactly one visit on the end date
+- [x] `as_needed` and `custom` produce no visits and appear in `skippedInstructions` with a stated reason
+- [x] A daily cat instruction and an every-other-day plant instruction over a 7 day range produce 7 visits, of which 4 carry both task identifiers and 3 carry one
+- [x] A single-day range with `once_at_start` and `once_at_end` produces exactly one visit carrying both task identifiers
+- [x] Returned visits are sorted ascending by date with no duplicate dates
+- [x] An empty instruction list produces zero visits and does not throw
+- [x] Tests pass: `pnpm test:unit`
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm lint` passes with zero errors
+- [x] `SESSION_LOG.md` updated with a session entry and a replaced Current State block
 
 **Must not do:**
 - Does not decide what happens to existing visits on regeneration; that preservation logic is Phase 2 service work
