@@ -36,11 +36,17 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col">
+      {/*
+        Navigation is deliberately plain. The visual design pass across every
+        surface is Phase 7; this exists so every screen that has been built is
+        reachable, which /settings was not until now.
+      */}
       <header className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
-        <nav className="flex items-center gap-4 text-sm font-medium">
+        <nav className="flex items-center gap-4 text-sm font-medium" data-testid="primary-nav">
           <Link href="/home">Today</Link>
           <Link href="/bookings">Bookings</Link>
           <Link href="/customers">Customers</Link>
+          <Link href="/settings">Settings</Link>
         </nav>
         <span className="truncate text-xs text-stone-500" data-testid="acting-admin">
           {admin.name}

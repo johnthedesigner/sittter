@@ -21,7 +21,8 @@
     "demo": "tsx scripts/demo.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "dev:signin": "tsx scripts/dev-signin-link.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -694,3 +694,20 @@ test("a customer detail screen shows that customer's activity and no other's", a
   await expect(page.getByTestId('activity-entry')).toHaveCount(0)
   await expect(page.getByTestId('no-activity')).toBeVisible()
 })
+
+test('every built screen is reachable from the navigation', async ({ page }) => {
+  await page.goto('/home')
+  const nav = page.getByTestId('primary-nav')
+
+  for (const [label, path] of [
+    ['Today', '/home'],
+    ['Bookings', '/bookings'],
+    ['Customers', '/customers'],
+    ['Settings', '/settings'],
+  ] as const) {
+    await expect(nav.getByRole('link', { name: label })).toHaveAttribute('href', path)
+  }
+
+  // And "New booking" is the persistent action, not a nav item.
+  await expect(page.getByTestId('new-booking')).toHaveAttribute('href', '/bookings/new')
+})

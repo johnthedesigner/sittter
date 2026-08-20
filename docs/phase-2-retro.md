@@ -51,7 +51,7 @@ The lesson worth carrying: **a slow write and a wrong write are indistinguishabl
 
 ## Decisions the human still owns
 
-1. **`/home` "filtered by the acting admin".** `docs/dev-plan.md` describes the home screen that way. Nothing in `docs/spec.md` defines that filter, there is no assignment model, and §5.11 says the equivalent digest content is "identical for every recipient". The screen shows the same content to every admin. **Needs a definition or a deletion.**
+1. ~~**`/home` "filtered by the acting admin".**~~ **RESOLVED 2026-08-20.** The intended meaning was that an admin belongs to a business and sees only that business's customers and bookings. That is business scoping, and it is already how every query works — `businessId` is the first argument of every repository function, resolved from the session by `requireAdmin()`. The phrase describes a property the system already has, not a per-admin filter, which is why no definition of one existed in the spec. Nothing to build.
 2. **`resolveEffectiveInstructions` placement.** A pure function sitting in `src/services/` because this phase did not modify `src/core/`. Moving it is free if a later phase wants it there.
 3. **`visits` has no `created_by` column** in `docs/dev-plan.md` §5, unlike `bookings`, `visit_logs`, and `photos`. Visit writes are attributed through the activity log. Adding a column would be a schema change the plan does not call for.
 4. Carried from Phase 0: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; the `photos/[id]/route.ts` discrepancy.

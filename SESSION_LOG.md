@@ -15,7 +15,11 @@
 2. **THE `docs/spec.md` §10 EVALUATION — the human's.** The isolated availability-check submission is built exactly as specified and was not relaxed. The seeded tentative booking is set up for it: sign in as one admin, set "dates are firm", sign in as the other, tap the calendar check. **Record the decision in the spec rather than leaving it open.**
 3. **Housekeeping session and `tasks/phase-3.md`** — `docs/META-PLAN.md` §8 and §3.
 
-**Decisions the human owns**, all in `docs/phase-2-retro.md` with recommendations: the `/home` "filtered by the acting admin" gap, which needs a definition or a deletion; `resolveEffectiveInstructions` placement; the absent `visits.created_by` column; plus the five carried from Phase 0.
+**RESOLVED 2026-08-20 — the `/home` "filtered by the acting admin" gap is closed.** The human's reading: an admin belongs to a business and should see only that business's customers and bookings. That is business scoping, which is already how every query works — every repository function takes `businessId` first and filters on it, `requireAdmin()` resolves it from the session, and `buildHomeModel` is called with it. **Nothing more to build.** The dev-plan phrase describes a property the system already has rather than a per-admin filter, which is why no definition of one could be found in the spec.
+
+**Decisions the human owns**, in `docs/phase-2-retro.md` with recommendations: `resolveEffectiveInstructions` placement; the absent `visits.created_by` column; plus the five carried from Phase 0.
+
+**A development detail worth knowing: `pnpm dev:signin <email>` mints a sign-in link for a seeded admin.** The seeded co-administrator is at `co-admin+sittter@example.com`, which can never receive email, and Resend's shared sender only delivers to the address owning the API key — so switching admins to evaluate anything needing two of them is otherwise impossible until a domain is verified in Phase 7. **Before Phase 7, the seed's second admin address should become a real inbox.**
 
 **Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`; the full e2e suite takes about five minutes and the integration suite about two.
 
