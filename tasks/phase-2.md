@@ -298,8 +298,8 @@ The two independent confirmation toggles, their attribution, and the transition 
 
 ### Task 2.5 — Visits: generation and editing
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.4
 
 **What this task implements:**
@@ -315,20 +315,20 @@ Visit generation on confirmation, the visit list, and individual visit editing �
 **Journey steps enabled:** 1.3.6, 4.3.1, 4.3.2, 4.3.3, 4.3.4.
 
 **Acceptance criteria:**
-- [ ] Visits are generated on transition to `Confirmed`, using `generateVisits` from `src/core/schedule.ts` — no second scheduling implementation exists
-- [ ] A date carrying two instructions produces **one** visit with both tasks (step 1.3.6)
-- [ ] Generated visits default to time window `anytime`
-- [ ] Instructions returned in `skippedInstructions` are surfaced with the reason `src/core/schedule.ts` already provides
-- [ ] An admin can add a visit on a date not generated (step 4.3.1)
-- [ ] Deleting an upcoming visit with no log requires no confirmation (step 4.3.2)
-- [ ] Deleting a visit **that has a log** requires an explicit confirmation first (step 4.3.3)
-- [ ] **Regeneration preserves logged visits**, and the warning names them before proceeding (step 4.3.4)
-- [ ] Regeneration is an explicit action, never a side effect of editing dates
-- [ ] Every visit write records the acting admin
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] Visits are generated on transition to `Confirmed`, using `generateVisits` from `src/core/schedule.ts` — no second scheduling implementation exists
+- [x] A date carrying two instructions produces **one** visit with both tasks (step 1.3.6)
+- [x] Generated visits default to time window `anytime`
+- [x] Instructions returned in `skippedInstructions` are surfaced with the reason `src/core/schedule.ts` already provides
+- [x] An admin can add a visit on a date not generated (step 4.3.1)
+- [x] Deleting an upcoming visit with no log requires no confirmation (step 4.3.2)
+- [x] Deleting a visit **that has a log** requires an explicit confirmation first (step 4.3.3)
+- [x] **Regeneration preserves logged visits**, and the warning names them before proceeding (step 4.3.4)
+- [x] Regeneration is an explicit action, never a side effect of editing dates
+- [x] Every visit write records the acting admin
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not reimplement cadence expansion; `src/core/schedule.ts` is the only scheduler

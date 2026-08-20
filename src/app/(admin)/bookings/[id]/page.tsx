@@ -22,6 +22,11 @@ import {
   PaymentSection,
   TerminalActions,
 } from '@/components/ConfirmationSection'
+import { VisitsSection } from '@/components/VisitsSection'
+import type { SkippedView, VisitView } from '@/components/VisitsSection'
+import { listVisitTaskIds, listVisitsForBooking } from '@/db/repositories/visits'
+import { listVisitLogsForVisits } from '@/db/repositories/visit-logs'
+import { planRegeneration } from '@/services/visits'
 import { getProperty } from '@/db/repositories/properties'
 import { env } from '@/lib/env'
 
@@ -44,12 +49,45 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const summary = await getBookingSummary(businessId, id)
   if (summary === null) notFound()
 
-  const [activity, admins, property, effective] = await Promise.all([
+  const [activity, admins, property, effective, visitRows] = await Promise.all([
     listActivityForBooking(businessId, id),
     listAdmins(businessId),
     getProperty(businessId, summary.booking.propertyId),
     effectiveInstructionsForBooking(businessId, summary.booking.propertyId, id),
+    listVisitsForBooking(businessId, id),
   ])
+
+  const hasDates = summary.booking.startDate !== null && summary.booking.endDate !== null
+  const logs = await listVisitLogsForVisits(
+    businessId,
+    visitRows.map((v) => v.id)
+  )
+  const loggedVisitIds = new Set(logs.map((l) => l.visitId))
+  const labelById = new Map(effective.map((e) => [e.instruction.id, e.instruction.label]))
+
+  const visitViews: VisitView[] = await Promise.all(
+    visitRows.map(async (v) => ({
+      id: v.id,
+      date: v.visitDate,
+      window: v.window,
+      durationMinutes: v.durationMinutes,
+      taskLabels: (await listVisitTaskIds(businessId, v.id)).map(
+        (taskId) => labelById.get(taskId) ?? taskId
+      ),
+      hasLog: loggedVisitIds.has(v.id),
+    }))
+  )
+
+  // Surfaces the reason src/core/schedule.ts already gives, rather than
+  // writing a second explanation of why a cadence produced nothing.
+  let skipped: SkippedView[] = []
+  if (hasDates) {
+    try {
+      skipped = (await planRegeneration(businessId, id)).skipped
+    } catch {
+      skipped = []
+    }
+  }
   const nameById = new Map(admins.map((a) => [a.id, a.name]))
 
   const today = todayIn(env().APP_TIMEZONE, new Date())
@@ -160,6 +198,16 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           />
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Visits</h2>
+        <VisitsSection
+          bookingId={booking.id}
+          visits={visitViews}
+          skipped={skipped}
+          canGenerate={hasDates}
+        />
+      </section>
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold tracking-tight">Payment</h2>

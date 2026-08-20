@@ -271,6 +271,11 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 1.3.1 | `e2e/journey-1.spec.ts` | toggling "dates are firm" sets it and shows who and when | 2 |
 | 1.3.2 | `e2e/journey-1.spec.ts` | one flag set and one unset is visible without opening the booking | 2 |
 | 1.3.3, 1.3.4, 1.3.5 | `e2e/journey-1.spec.ts` | the second admin sees the first's work and completes it | 2 |
+| 1.3.6 | `e2e/journey-4.spec.ts` | confirming generates one visit per date, shared dates carrying both tasks | 2 |
+| 4.3.1 | `e2e/journey-4.spec.ts` | an admin can add a visit on a date not originally generated | 2 |
+| 4.3.2 | `e2e/journey-4.spec.ts` | deleting an upcoming visit with no log needs no confirmation | 2 |
+| 4.3.3 | `src/services/visits.test.ts` | refuses to delete a logged visit without a confirmation | 2 |
+| 4.3.4 | `e2e/journey-4.spec.ts` | regenerating preserves visits and is explicit, never automatic | 2 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |
 | 8.1.3 | `e2e/journey-8.spec.ts` | following the link creates a session and loads home | 1 |

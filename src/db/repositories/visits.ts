@@ -91,3 +91,16 @@ export async function listVisitsOnDate(businessId: string, date: string): Promis
     .where(and(eq(visits.businessId, businessId), eq(visits.visitDate, date)))
     .orderBy(visits.visitDate)
 }
+
+export async function updateVisit(
+  businessId: string,
+  visitId: string,
+  patch: Partial<Omit<NewVisit, 'businessId' | 'id'>>
+): Promise<Visit | null> {
+  const [row] = await db()
+    .update(visits)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(and(eq(visits.businessId, businessId), eq(visits.id, visitId)))
+    .returning()
+  return row ?? null
+}

@@ -2,30 +2,28 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 4 of 7 tasks complete
-**Next task:** 2.5 — Visits: generation and editing
+**Phase:** 2 — Admin surface — In progress, 5 of 7 tasks complete
+**Next task:** 2.6 — Pricing
 
-**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, property details, payment, terminal actions, and a read-only activity list.
+**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, visits, property details, payment, terminal actions, and a read-only activity list.
 
-**Tests:** 220 unit, 154 integration, 54 end-to-end.
+**Tests:** 220 unit, 168 integration, 62 end-to-end.
 
-**THE §10 OPEN QUESTION IS NOW LIVE AND EVALUABLE.** The isolated availability-check submission is built exactly as `docs/spec.md` §5.5 specifies and was **not** relaxed. An observation for the human's evaluation at the phase gate, recorded now while it is fresh:
+**What Task 2.6 must know:**
+- **The pricing snapshot is taken on transition to `Confirmed`,** alongside visit generation. `generateVisitsOnConfirmation` in `src/services/visits.ts` is the model: it keys off the RESULTING derived status rather than off which flag was toggled, because either confirmation action can complete it, and it no-ops when a schedule already exists so a flag toggled off and on does not rebuild something edited by hand.
+- Both confirmation actions in `src/app/(admin)/actions/confirmation.ts` already call that hook; the pricing snapshot goes beside it.
+- `priceBooking` in `src/core/pricing.ts` is the only engine. `listDefaultPricingComponents` and `listPricingComponentsForBooking` already exist, and a component with a null `bookingId` is a business default while one carrying a `bookingId` is a snapshot.
+- `formatCents` in `src/components/format.ts` formats integer cents with integer arithmetic. **9.1.6 is the criterion that matters most:** raising the business default must not change a confirmed booking's total, which is what the snapshot is for.
 
-> Building against the rule cost nothing. `setAvailabilityChecked` takes a booking and a boolean, so a combined save is structurally impossible rather than merely discouraged, and that made the service simpler to write and test than a general update would have been. Whether it costs an *admin* anything is a different question and is not answerable from here — it needs someone confirming a real booking on a phone. The friction the spec anticipates would show up as: having changed a date, you must now find and tap a second control before the booking becomes confirmed.
-
-**What Task 2.5 must know:**
-- **Visits are generated on transition to `Confirmed`.** That transition happens in `setDatesFirm` and `setAvailabilityChecked` in `src/services/bookings.ts` — either can be the one that completes it, so generation must key off the resulting derived status rather than off which flag was toggled.
-- **A date change deliberately does not regenerate.** `changeBookingDates` leaves visits alone; `regenerateVisits` is its own explicit action per `docs/dev-plan.md` §7.3.
-- `generateVisits` in `src/core/schedule.ts` is the only scheduler. `effectiveInstructionsForBooking` in `src/services/care-instructions.ts` gives the instructions in force, overrides resolved.
-- `TRANSITION_ENTRIES` in `src/services/bookings.ts` holds the exact system entry text; add the `visitsRegenerated` entry there rather than at a call site.
+**A schema fact worth knowing:** `visits` has no `created_by` column in `docs/dev-plan.md` §5, unlike `bookings`, `visit_logs`, and `photos`. Visit writes are attributed through the activity log rather than on the row. Adding a column would be a schema change the plan does not call for — recorded rather than done.
 
 **A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1`.
+**The §10 open question is live and evaluable.** See the Task 2.4 entry in `logs/` or the observation recorded there.
 
-**Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`, plus the `/home` filtering gap and now the §10 evaluation.
+**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`.
 
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **§10 evaluation** — both now performable.
+**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **`docs/spec.md` §10 evaluation** — both performable now.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
@@ -34,6 +32,47 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.5: Visits — generation and editing
+
+**What was done:**
+- `src/services/visits.ts` — `planRegeneration`, `regenerateVisitsForBooking`, `generateVisitsOnConfirmation`, `addVisit`, `editVisit`, `removeVisit`
+- `src/app/(admin)/actions/visits.ts`, `src/components/VisitsSection.tsx`, `src/components/visit-state.ts`
+- `src/db/repositories/visits.ts` — `updateVisit`
+- `src/services/visits.test.ts` — 14 tests; `e2e/journey-4.spec.ts` — 8 specs
+
+**A runtime rule I broke, and why it was expensive to diagnose.**
+
+`src/app/(admin)/actions/visits.ts` exported `EMPTY_VISIT_STATE`, a plain object, from a `'use server'` file. **A `'use server'` file may export only async functions.** It builds, it typechecks, and it fails at runtime — taking down every module that imports it. The booking detail page broke entirely, so **thirteen specs across a different journey** failed with "expected 1, received 0" for elements whose absence had nothing to do with them. The actual message, `A "use server" file can only export async functions, found object`, appeared only in the web server log, not in any test output.
+
+Recorded in AGENTS.md Patterns established, with the audit command. `export interface` and `export type` are fine — they are erased before the rule applies.
+
+**Decisions made:**
+
+- **Generation keys off the resulting derived status, not off which flag was toggled.** Either confirmation action can be the one that completes it, so both call the same hook and the hook asks `deriveStatus` what happened.
+- **Generation no-ops when a schedule already exists.** A flag toggled off and on again must not rebuild a schedule someone has since edited by hand. Tested with a hand-added visit surviving that round trip.
+- **`planRegeneration` is separate from applying it.** Journey step 4.3.4 requires a warning that NAMES the logged visits at stake; computing the plan first is what makes that warning truthful rather than a guess.
+- **Logged visits are preserved unconditionally.** A visit someone has written up records what actually happened, and a cadence change must not be able to erase it. Unlogged visits the cadences no longer produce are removed.
+- **Deleting a logged visit requires an explicit second confirmation; an unlogged one does not.** Steps 4.3.2 and 4.3.3, enforced in the service rather than only in the UI.
+- **Skipped instructions surface the reason `src/core/schedule.ts` already gives**, rather than a second explanation written here.
+
+**Not done:**
+- **No visit logging** — outcome, note, and photos are Phase 4. `hasLog` is read to decide whether deleting needs a confirmation, and nothing writes one.
+- **No pricing snapshot on confirmation** — Task 2.6 adds it beside visit generation.
+- **No `created_by` column added to `visits`.** The plan's schema does not have one; attribution is through the activity log.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 168 tests |
+| `pnpm test:e2e` | PASS — 62 tests |
+| `pnpm build` / `typecheck` / `lint` / `prettier` | PASS |
+| Drizzle query builder outside `src/db/` | none |
+| Second scheduler anywhere | none — `src/core/schedule.ts` only |
+
+---
 
 ## 2026-08-19 — Task 2.4: The two confirmation actions
 

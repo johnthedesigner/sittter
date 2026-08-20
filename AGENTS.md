@@ -490,6 +490,24 @@ import { SIGN_IN_COPY } from '../src/app/signin/copy'
 
 Established because: copy strings living beside the markup that renders them made the sign-in journey untestable. The copy is better off in its own module regardless.
 
+### A 'use server' file may export only async functions
+
+Exporting a constant — even a small one, beside the actions that use it — fails at RUNTIME, not at build or typecheck, and it takes down every module that imports the file. The symptom therefore appears far from the cause: unrelated pages break, and the failing assertion is about missing UI.
+
+```ts
+// wrong — in a 'use server' file. Build passes; the page 500s with:
+//   Error: A "use server" file can only export async functions, found object.
+export const EMPTY_VISIT_STATE = { error: null, warning: null }
+
+// correct — the constant lives in a plain module
+// src/components/visit-state.ts
+export const EMPTY_VISIT_STATE = { error: null, warning: null }
+```
+
+`export interface` and `export type` are fine — they are erased before the rule applies.
+
+Established because: one exported object broke the entire booking detail screen, and thirteen specs across a different journey failed with "expected 1, received 0" for elements whose absence had nothing to do with them. Audit with: `for f in $(grep -rl "^'use server'" src/app); do grep -nE '^export (const|let|var|class)' "$f"; done`
+
 ### An end-to-end test cannot follow a real magic link, and should not try
 
 Only the SHA-256 hash is stored, so there is no way to recover a plaintext token from the database — which is the property the design is aiming for. Reading a real inbox would be slow, flaky, and would send mail on every run.

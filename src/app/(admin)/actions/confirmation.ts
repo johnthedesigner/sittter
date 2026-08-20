@@ -14,6 +14,8 @@ import {
   setDatesFirm,
 } from '@/services/bookings'
 
+import { generateVisitsOnConfirmation } from '@/services/visits'
+
 import { actingAdmin } from './bookings'
 
 export interface ConfirmationState {
@@ -30,6 +32,7 @@ export async function toggleDatesFirm(formData: FormData): Promise<void> {
   const bookingId = bookingIdFrom(formData)
   const now = new Date()
 
+  const today = todayIn(env().APP_TIMEZONE, now)
   await setDatesFirm(
     businessId,
     admin.id,
@@ -37,8 +40,12 @@ export async function toggleDatesFirm(formData: FormData): Promise<void> {
     bookingId,
     formData.get('value') === 'true',
     now,
-    todayIn(env().APP_TIMEZONE, now)
+    today
   )
+
+  // Either flag can be the one that completes confirmation, so generation
+  // keys off the resulting derived status rather than off which was toggled.
+  await generateVisitsOnConfirmation(businessId, admin.id, admin.name, bookingId, today)
 
   revalidatePath(`/bookings/${bookingId}`)
 }
@@ -59,6 +66,7 @@ export async function toggleAvailabilityChecked(formData: FormData): Promise<voi
   const bookingId = bookingIdFrom(formData)
   const now = new Date()
 
+  const today = todayIn(env().APP_TIMEZONE, now)
   await setAvailabilityChecked(
     businessId,
     admin.id,
@@ -66,8 +74,10 @@ export async function toggleAvailabilityChecked(formData: FormData): Promise<voi
     bookingId,
     formData.get('value') === 'true',
     now,
-    todayIn(env().APP_TIMEZONE, now)
+    today
   )
+
+  await generateVisitsOnConfirmation(businessId, admin.id, admin.name, bookingId, today)
 
   revalidatePath(`/bookings/${bookingId}`)
 }
