@@ -130,7 +130,46 @@ export async function regenerateVisitsForBooking(
   today: CalendarDate,
   options: { recordActivity?: boolean } = {}
 ): Promise<RegenerationPlan> {
-  const plan = await planRegeneration(businessId, bookingId)
+  const booking = await getBooking(businessId, bookingId)
+  if (booking === null) throw new VisitError('That booking no longer exists.')
+  if (booking.startDate === null || booking.endDate === null) {
+    throw new VisitError('A booking needs both dates before visits can be generated.')
+  }
+
+  const effective = await effectiveInstructionsForBooking(businessId, booking.propertyId, bookingId)
+  const instructions = instructionsToCore(effective)
+
+  // Computed ONCE and reused. An earlier version called planRegeneration and
+  // then repeated the booking read, the instruction resolution, and the
+  // schedule expansion — three extra round trips per regeneration, which was
+  // enough to time a test out against a remote database.
+  const generated = generateFromCadence({
+    startDate: booking.startDate as CalendarDate,
+    endDate: booking.endDate as CalendarDate,
+    instructions,
+  })
+
+  const generatedDates = new Set(generated.visits.map((v) => v.date))
+  const existing = await listVisitsForBooking(businessId, bookingId)
+  const logs = await listVisitLogsForVisits(
+    businessId,
+    existing.map((v) => v.id)
+  )
+  const logged = new Set(logs.map((l) => l.visitId))
+  const existingDates = new Set(existing.map((v) => v.visitDate))
+  const stale = existing.filter((v) => !generatedDates.has(v.visitDate as CalendarDate))
+  const labelById = new Map(instructions.map((i) => [i.id, i.label]))
+
+  const plan: RegenerationPlan = {
+    toCreate: generated.visits.map((v) => v.date).filter((d) => !existingDates.has(d)),
+    toDelete: stale.filter((v) => !logged.has(v.id)),
+    preservedLogged: stale.filter((v) => logged.has(v.id)),
+    skipped: generated.skippedInstructions.map((s) => ({
+      id: s.id,
+      label: labelById.get(s.id) ?? s.id,
+      reason: s.reason,
+    })),
+  }
 
   if (plan.toDelete.length > 0) {
     await deleteVisits(
@@ -139,23 +178,7 @@ export async function regenerateVisitsForBooking(
     )
   }
 
-  const effective = await effectiveInstructionsForBooking(
-    businessId,
-    (await getBooking(businessId, bookingId))!.propertyId,
-    bookingId
-  )
-  const instructions = instructionsToCore(effective)
-  const booking = await getBooking(businessId, bookingId)
-
-  const generated = generateFromCadence({
-    startDate: booking!.startDate as CalendarDate,
-    endDate: booking!.endDate as CalendarDate,
-    instructions,
-  })
-
-  const existing = await listVisitsForBooking(businessId, bookingId)
   const byDate = new Map(existing.map((v) => [v.visitDate, v]))
-
   for (const wanted of generated.visits) {
     const row =
       byDate.get(wanted.date) ??

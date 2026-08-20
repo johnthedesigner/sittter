@@ -9,7 +9,7 @@ import { expect, signedInTest as test } from './fixtures'
 
 /** Confirm the seeded tentative booking so it has a generated schedule. */
 async function confirmedBookingWithVisits(page: import('@playwright/test').Page): Promise<string> {
-  await page.goto('/bookings?status=tentative')
+  await page.goto('/bookings?status=tentative', { waitUntil: 'domcontentloaded' })
   await page.getByTestId('booking-row').first().getByRole('link').first().click()
   await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
 
@@ -106,7 +106,9 @@ test('4.3.4 — regenerating preserves visits and is explicit, never automatic',
   // Regeneration is the explicit action.
   await page.goto(url)
   await page.getByTestId('regenerate-visits').click()
-  await expect(page.getByTestId('visit')).toHaveCount(3)
+  // Regeneration deletes and recreates rows, so give it room rather than
+  // racing it — a slow write and a wrong one look identical here.
+  await expect(page.getByTestId('visit')).toHaveCount(3, { timeout: 15_000 })
 })
 
 test('a visit window and duration can be edited', async ({ page }) => {

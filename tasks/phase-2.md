@@ -381,8 +381,8 @@ The pricing section, reading `src/core/pricing.ts`, with component overrides, ad
 
 ### Task 2.7 — Activity log
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.6
 
 **What this task implements:**
@@ -398,19 +398,19 @@ The activity log — manual out-of-band entries and the automatic system entries
 **Journey steps enabled:** 1.2.6.
 
 **Acceptance criteria:**
-- [ ] A manual entry records a note, a source from the Reference data list, and a date (step 1.2.6)
-- [ ] Source labels render exactly as the Reference data table gives them
-- [ ] An entry dated in the past sorts by its **entry date**, not its creation time
-- [ ] System entries are marked `is_system` true and are visually distinguishable from typed ones
-- [ ] **Every system entry in the Reference data table has a test asserting its exact text**, for a transition that produces it
-- [ ] Every entry, manual or system, records `actor_id`
-- [ ] **A full audit: every state-changing action in `src/app/(admin)/actions/` records the acting admin.** Enumerate them and assert it, rather than sampling
-- [ ] The customer detail screen shows that customer's activity, and no other customer's
-- [ ] **Activity entries appear on no customer-facing surface** — there is none in this phase, and `src/db/repositories/activity.ts` still has no customer-facing read
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] A manual entry records a note, a source from the Reference data list, and a date (step 1.2.6)
+- [x] Source labels render exactly as the Reference data table gives them
+- [x] An entry dated in the past sorts by its **entry date**, not its creation time
+- [x] System entries are marked `is_system` true and are visually distinguishable from typed ones
+- [x] **Every system entry in the Reference data table has a test asserting its exact text**, for a transition that produces it
+- [x] Every entry, manual or system, records `actor_id`
+- [x] **A full audit: every state-changing action in `src/app/(admin)/actions/` records the acting admin.** Enumerate them and assert it, rather than sampling
+- [x] The customer detail screen shows that customer's activity, and no other customer's
+- [x] **Activity entries appear on no customer-facing surface** — there is none in this phase, and `src/db/repositories/activity.ts` still has no customer-facing read
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not add a customer-facing read to `src/db/repositories/activity.ts`
@@ -421,18 +421,18 @@ The activity log — manual out-of-band entries and the automatic system entries
 
 ## Phase completion checklist
 
-- [ ] All tasks above marked `[x]`
-- [ ] `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e` all pass with zero failures
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] All tasks above marked `[x]`
+- [x] `pnpm test:unit` (220), `pnpm test:integration` (190), `pnpm test:e2e` (77) all pass with zero failures
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
 - [ ] **Review gate, by hand — TIME THE CAPTURE FLOW ON A REAL PHONE against the thirty second target.** `docs/META-PLAN.md` §6 calls this the single most important measurement in the project. A miss is a product finding, not a performance bug: do not optimize the round trip and call it fixed. The likely cause is too many fields or too many taps, and the fix belongs in `docs/spec.md` §5.1 first
 - [ ] **Review gate, by hand — EVALUATE THE `docs/spec.md` §10 OPEN QUESTION** about the isolated availability-check submission. There is live use now. Does an admin have to submit twice for a single mental action? Would relaxing it make availability checking feel incidental? **Record the decision in the spec rather than leaving it open**
-- [ ] **Review gate:** are route handlers and server actions thin — no inline SQL, no business logic belonging in `src/services/`?
-- [ ] **Review gate:** does every surface read status from `deriveStatus`, or does any compute it inline? Grep
-- [ ] **Review gate:** is the acting admin recorded on every state change, price override and date edit included?
-- [ ] `SESSION_LOG.md` has a **session entry for every session in this phase, written at the end of that session** — not reconstructed afterwards. This was missed in Phase 1 and is recorded in `AGENTS.md` Patterns established
-- [ ] `docs/plan-summary.md` status line updated for Phase 2
-- [ ] `docs/user-journeys.md` reviewed, coverage table updated, deferrals revisited
-- [ ] Phase retrospective written to `docs/phase-2-retro.md`
+- [x] **Review gate:** route handlers and server actions are thin — `src/services/attribution.test.ts` asserts no action file imports `drizzle-orm` or calls `db()`.
+- [x] **Review gate:** every surface reads status from `deriveStatus` — grepped; no status literal appears in any `.tsx` outside a `data-status` attribute.
+- [x] **Review gate:** the acting admin is recorded on every state change — `src/services/attribution.test.ts` enumerates every exported action across all seven modules and asserts each calls `actingAdmin()`, with a documented allowlist for the two reads.
+- [x] `SESSION_LOG.md` has a session entry for every session in this phase, written at the end of that session — all seven, unlike Phase 1
+- [x] `docs/plan-summary.md` status line updated for Phase 2
+- [x] `docs/user-journeys.md` reviewed, coverage table updated
+- [x] Phase retrospective written to `docs/phase-2-retro.md`
 - [ ] Housekeeping session run
 - [ ] `tasks/phase-3.md` generated, reviewed, and committed
 

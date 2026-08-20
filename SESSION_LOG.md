@@ -2,33 +2,71 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 6 of 7 tasks complete
-**Next task:** 2.7 — Activity log — **the last task in Phase 2**
+**Phase:** 2 — Admin surface — **COMPLETE, 2026-08-19.** Retrospective in `docs/phase-2-retro.md`.
+**Next phase:** 3 — Links and customer surfaces. **Not started.**
 
-**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/settings`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, visits, pricing, property details, payment, terminal actions, and a read-only activity list.
+**What's built:** `src/core/` complete; the schema on Neon; 15 repository modules; magic-link auth; and the full admin surface — `/home`, `/bookings`, `/bookings/new`, `/bookings/[id]`, `/customers`, `/customers/[id]`, `/settings`.
 
-**Tests:** 220 unit, 185 integration, 71 end-to-end.
+**Tests:** 220 unit, 190 integration, 77 end-to-end. `pnpm build`, `typecheck`, `lint`, `prettier` all pass.
 
-**What Task 2.7 must do:**
-- **Manual activity entries**, with a source from the Reference data list and a date, sorting by **entry date** rather than creation time.
-- **Customer detail screens** at `/customers/[id]`, showing that customer's activity and no other's.
-- **A full audit**: every state-changing action in `src/app/(admin)/actions/` records the acting admin. Enumerate them and assert it rather than sampling. The actions are in `auth.ts`, `bookings.ts`, `care-instructions.ts`, `confirmation.ts`, `visits.ts`, `pricing.ts`.
-- **Every system entry in the Reference data table needs a test asserting its exact text.** Most already have one in the service tests; the audit is to confirm none is missing.
-- `TRANSITION_ENTRIES` in `src/services/bookings.ts` holds the transition text. The capture, date-change, regeneration, and count-override entries are written at their own call sites.
+**Phase 2 gate: closed except three items.**
 
-**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged.
+1. **THE THIRTY-SECOND CAPTURE MEASUREMENT — the human's, on a real phone.** `docs/META-PLAN.md` §6 calls it the single most important measurement in the project. `/bookings/new` is the surface. A miss is a **product finding**: the fix belongs in `docs/spec.md` §5.1 before it belongs in code, and the likely cause is too many fields or taps rather than a slow round trip.
+2. **THE `docs/spec.md` §10 EVALUATION — the human's.** The isolated availability-check submission is built exactly as specified and was not relaxed. The seeded tentative booking is set up for it: sign in as one admin, set "dates are firm", sign in as the other, tap the calendar check. **Record the decision in the spec rather than leaving it open.**
+3. **Housekeeping session and `tasks/phase-3.md`** — `docs/META-PLAN.md` §8 and §3.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`. The full e2e suite takes about five minutes.
+**Decisions the human owns**, all in `docs/phase-2-retro.md` with recommendations: the `/home` "filtered by the acting admin" gap, which needs a definition or a deletion; `resolveEffectiveInstructions` placement; the absent `visits.created_by` column; plus the five carried from Phase 0.
 
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **`docs/spec.md` §10 evaluation**. Both performable now.
+**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`; the full e2e suite takes about five minutes and the integration suite about two.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
-**Open questions in the spec:** the three deferred items in `docs/spec.md` §10 remain open and are not to be resolved during implementation.
+**Open questions in the spec:** the three deferred items in `docs/spec.md` §10 remain open. One of them is now evaluable — see gate item 2.
 
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.7: Activity log — PHASE 2 COMPLETE
+
+**What was done:**
+- `src/app/(admin)/actions/activity.ts`, `src/components/ActivitySection.tsx`, `activity-state.ts`
+- `src/app/(admin)/customers/[id]/page.tsx`
+- `src/services/attribution.test.ts` — the audit
+- `src/services/visits.ts` — removed redundant work from `regenerateVisitsForBooking`
+- 6 more e2e specs; `docs/phase-2-retro.md`
+
+**The audit enumerates rather than samples.**
+
+`docs/spec.md` §6.2 makes attribution the accountability mechanism that replaces permissions, so it has to hold everywhere rather than mostly. `src/services/attribution.test.ts` reads every file in `src/app/(admin)/actions/`, extracts every exported action, and asserts each calls `actingAdmin()` — with a documented allowlist of two reads and an exemption for `auth.ts`, which predates having an admin. It also asserts no action file imports `drizzle-orm` or calls `db()`, and that `src/db/repositories/activity.ts` exports exactly three functions, none named for a portal or a public surface.
+
+A second test produces **all eleven** Reference data system entries in one booking's lifetime and asserts each exact string, plus that every system entry is attributed, flagged, and sourced `app`.
+
+**Decisions made:**
+
+- **`entryDate` is when something HAPPENED, not when it was typed.** A text message from last Tuesday is dated last Tuesday, and the log sorts by that. There is an e2e test that types the earlier entry second and asserts the order.
+- **The entry form closes after a successful save.** Left open it hid the entry just recorded and offered no way back — found because a test could not add a second entry, which was a real UX flaw rather than a test problem.
+
+**A flaky test that was pointing at real waste.** `regenerateVisitsForBooking` called `planRegeneration` and then repeated the booking read, the instruction resolution, and the schedule expansion — three extra round trips per regeneration. Against a remote database that was enough to time a test out intermittently. Computing once and reusing fixed both the inefficiency and the flake. Recorded because the instinct on an intermittent failure is to raise the timeout.
+
+**Not done:**
+- **No customer-facing read of activity exists**, and a test asserts the repository's exported names.
+- **No system entry can be edited or deleted by a human** — there is no control for it.
+- **Neither non-code review gate has been performed.** Both need a human and a phone.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 190 tests, stable across two consecutive runs |
+| `pnpm test:e2e` | PASS — 77 tests |
+| `pnpm build` / `typecheck` / `lint` / `prettier` | PASS |
+| Attribution audit across all seven action modules | PASS |
+| Drizzle or `db()` inside any action | none |
+| Status literal in any `.tsx` outside `data-status` | none |
+
+---
 
 ## 2026-08-19 — Task 2.6: Pricing
 

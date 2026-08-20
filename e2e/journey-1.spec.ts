@@ -567,3 +567,130 @@ test('no confirmation email is sent — that is Phase 3', async ({ page }) => {
   const { countEmailSends } = await import('./fixtures')
   expect(await countEmailSends()).toBe(0)
 })
+
+// ── The activity log, step 1.2.6 ─────────────────────────────────────
+
+test('1.2.6 — a manual entry records its note, source, and date', async ({ page }) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('Dana texted to move the dates a day later.')
+  await page.getByTestId('activity-source-select').selectOption('text_message')
+  await page.getByTestId('activity-date').fill('2026-08-14')
+  await page.getByTestId('save-activity').click()
+
+  const entry = page.getByTestId('activity-entry').filter({ hasText: 'Dana texted' })
+  await expect(entry).toHaveCount(1)
+  await expect(entry).toHaveAttribute('data-source', 'text_message')
+  await expect(entry).toHaveAttribute('data-entry-date', '2026-08-14')
+  await expect(entry.getByTestId('activity-source')).toHaveText('Text message')
+  // Typed by a person, so not a system entry.
+  await expect(entry).toHaveAttribute('data-system', 'false')
+})
+
+test('activity source labels match the reference data', async ({ page }) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+  await page.getByTestId('add-activity').click()
+
+  const options = await page
+    .getByTestId('activity-source-select')
+    .locator('option')
+    .allTextContents()
+  expect(options).toEqual([
+    'Text message',
+    'In person',
+    'Phone',
+    'Email',
+    'Customer form',
+    'In the app',
+  ])
+})
+
+test('an entry dated in the past sorts by its entry date, not when it was typed', async ({
+  page,
+}) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  // Typed second, dated earlier — so it must appear BELOW the later one.
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('Later thing')
+  await page.getByTestId('activity-date').fill('2026-08-16')
+  await page.getByTestId('save-activity').click()
+  await expect(page.getByTestId('activity-entry').filter({ hasText: 'Later thing' })).toHaveCount(1)
+
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('Earlier thing')
+  await page.getByTestId('activity-date').fill('2026-08-10')
+  await page.getByTestId('save-activity').click()
+  await expect(page.getByTestId('activity-entry').filter({ hasText: 'Earlier thing' })).toHaveCount(
+    1
+  )
+
+  const dates = await page
+    .getByTestId('activity-entry')
+    .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-entry-date')))
+  const sorted = [...dates].sort().reverse()
+  expect(dates).toEqual(sorted)
+})
+
+test('a system entry is visually distinguishable from a typed one', async ({ page }) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  await page.getByTestId('toggle-dates-firm').click()
+  await expect(page.getByTestId('dates-firm-attribution')).toBeVisible({ timeout: 15_000 })
+
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('Typed by a person')
+  await page.getByTestId('save-activity').click()
+
+  const system = page.getByTestId('activity-entry').filter({ hasText: 'dates firm' })
+  const manual = page.getByTestId('activity-entry').filter({ hasText: 'Typed by a person' })
+  await expect(system).toHaveAttribute('data-system', 'true')
+  await expect(manual).toHaveAttribute('data-system', 'false')
+  await expect(system).toContainText('automatic')
+  await expect(manual).not.toContainText('automatic')
+})
+
+test('an entry with no note is refused', async ({ page }) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('   ')
+  await page.getByTestId('save-activity').click()
+  await expect(page.getByTestId('activity-error')).toBeVisible()
+})
+
+test("a customer detail screen shows that customer's activity and no other's", async ({ page }) => {
+  await page.goto('/customers')
+  const rows = page.getByTestId('customer-row')
+  await expect(rows).toHaveCount(2)
+
+  // Record something against the first customer.
+  await rows.first().getByRole('link').click()
+  await page.waitForURL(/\/customers\/[0-9a-f-]{36}$/)
+  const firstName = await page.getByTestId('customer-name').innerText()
+
+  await page.getByTestId('add-activity').click()
+  await page.getByTestId('activity-note').fill('Left a voicemail about the spare key.')
+  await page.getByTestId('activity-source-select').selectOption('phone')
+  await page.getByTestId('save-activity').click()
+  await expect(page.getByTestId('activity-entry')).toHaveCount(1)
+
+  // The other customer's screen does not show it.
+  await page.goto('/customers')
+  await page.getByTestId('customer-row').nth(1).getByRole('link').click()
+  await page.waitForURL(/\/customers\/[0-9a-f-]{36}$/)
+  await expect(page.getByTestId('customer-name')).not.toHaveText(firstName)
+  await expect(page.getByTestId('activity-entry')).toHaveCount(0)
+  await expect(page.getByTestId('no-activity')).toBeVisible()
+})

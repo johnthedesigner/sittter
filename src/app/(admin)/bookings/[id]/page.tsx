@@ -8,8 +8,9 @@ import { listAdmins } from '@/db/repositories/admins'
 import { toBookingCore } from '@/services/home'
 import { StatusChip } from '@/components/StatusChip'
 import { FlagIndicator } from '@/components/FlagIndicator'
-import { formatAttribution, formatCalendarDate, formatRange } from '@/components/format'
-import { ACTIVITY_SOURCE_LABELS } from '@/components/activity'
+import { formatAttribution, formatRange } from '@/components/format'
+import { ActivitySection } from '@/components/ActivitySection'
+import type { ActivityEntryView } from '@/components/ActivitySection'
 import {
   CareInstructionsSection,
   DatesSection,
@@ -251,29 +252,18 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
-        {activity.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-600">Nothing recorded yet.</p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {activity.map((entry) => (
-              <li
-                key={entry.id}
-                data-testid="activity-entry"
-                data-system={entry.isSystem ? 'true' : 'false'}
-                className={`rounded-md border p-3 text-sm ${
-                  entry.isSystem
-                    ? 'border-stone-100 bg-stone-100 text-stone-600'
-                    : 'border-stone-200 bg-white'
-                }`}
-              >
-                <p>{entry.note}</p>
-                <p className="mt-1 text-xs text-stone-500">
-                  {ACTIVITY_SOURCE_LABELS[entry.source]} · {formatCalendarDate(entry.entryDate)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ActivitySection
+          bookingId={booking.id}
+          today={today}
+          entries={activity.map((e): ActivityEntryView => ({
+            id: e.id,
+            note: e.note,
+            source: e.source,
+            entryDate: e.entryDate,
+            isSystem: e.isSystem,
+            actorName: e.actorId === null ? null : (nameById.get(e.actorId) ?? null),
+          }))}
+        />
       </section>
     </main>
   )

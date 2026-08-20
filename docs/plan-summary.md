@@ -3,7 +3,7 @@
 > **Purpose:** the fastest way to answer "where are we". One paragraph per phase, one status line each.
 > **Maintenance:** status lines are updated at each phase completion. Paragraphs are kept in sync with `docs/dev-plan.md` and revised only when the plan itself changes.
 
-**Project status:** Phase 1 complete. `src/core/` is built and tested, the schema is live on Neon, repositories are the only path to it, and an admin can sign in with a magic link. 317 tests across three suites. No booking interface and no customer surfaces yet.
+**Project status:** Phase 2 complete. Both admins can run the business end to end from a phone: capture, the booking list, the full booking detail screen, confirmation, visits, pricing, and the activity log. 487 tests across three suites. No customer surfaces, links, photos, calendar, or digest yet.
 
 ---
 
@@ -21,7 +21,7 @@ The schema is created and migrated, repositories become the only path to the dat
 
 ## Phase 2 — Admin surface
 
-**Status:** Not started
+**Status:** Complete — 2026-08-19. Seven tasks. Journeys 1, 4.3, 8, and 9 covered end to end. Retrospective in `docs/phase-2-retro.md`. **Two review gates remain outstanding and need a human with a phone:** the thirty-second capture measurement and the `docs/spec.md` §10 evaluation.
 
 Both admins can run the business end to end from a phone. Fast capture, the booking list with both confirmation flags visible as columns, the full booking detail screen, care instruction editing with booking-level overrides, visit generation and editing, the pricing section, and the activity log with automatic system entries. The two confirmation actions are built as isolated submissions per the spec. This is the phase where the thirty-second capture target is measured against a real phone, and where the open question about isolated confirmation submissions gets its first live evaluation.
 
@@ -63,7 +63,7 @@ The visual design pass across every surface, with customer-facing pages prioriti
 |---|---|---|---|---|
 | 0 | 2026-08-17 | 2026-08-19 | 8 | `docs/phase-0-retro.md` |
 | 1 | 2026-08-19 | 2026-08-19 | 5 | `docs/phase-1-retro.md` |
-| 2 | — | — | — | — |
+| 2 | 2026-08-19 | 2026-08-19 | 7 | `docs/phase-2-retro.md` |
 | 3 | — | — | — | — |
 | 4 | — | — | — | — |
 | 5 | — | — | — | — |
