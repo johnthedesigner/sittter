@@ -188,6 +188,12 @@ A customer visits the public intake link, typically `sittter.com/new`.
 - The confirmation screen states plainly that the request has been received, that dates are not confirmed until someone gets back to them, and gives the customer their portal link.
 - Both admins receive an email notification of a new intake submission.
 
+**Acceptance target: time to intake.** Added 2026-08-20. A first-time customer on a phone, who has not seen this form before, completes and submits it in under **two minutes** — name, contact, dates, and a sentence about what they need.
+
+This matters more than the admin capture target in §5.1, not less. An admin who takes forty seconds is mildly inconvenienced; a customer who abandons this form is a lost booking, and nobody finds out it happened. Only the required fields count toward the measurement — a customer who chooses to write three paragraphs in "Tell us more" is not failing the target.
+
+Measured by hand on a real phone, by someone who did not build the form, at the Phase 3 review gate. A miss is a product finding: the fix is fewer required fields or fewer taps, in this section, before it is anything in code. **The two-minute figure is a first proposal and should be confirmed or replaced once the form exists.**
+
 ### 5.3 Stage: Pre-addressed booking link (customer)
 
 An admin has already created the booking. They send the customer a link so the customer fills in what only they know.
@@ -199,6 +205,8 @@ An admin has already created the booking. They send the customer a link so the c
 - Submitting updates the existing booking rather than creating a new one.
 - Every field the customer changes is recorded as an activity entry with source `customer form`.
 - The link resolves to this form only while the booking is in `Inquiry` or `Tentative` status. After confirmation it resolves to the customer portal instead.
+
+**Acceptance target: time to intake.** Added 2026-08-20. Under **ninety seconds**, since name, contact, and often the dates arrive pre-filled and the customer is confirming and completing rather than starting from nothing. Same measurement conditions as §5.2. **The figure is a first proposal and should be confirmed or replaced once the form exists.**
 
 ### 5.4 Stage: Booking completion (admin)
 

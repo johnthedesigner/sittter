@@ -9,14 +9,13 @@
 
 **Tests:** 220 unit, 190 integration, 77 end-to-end. `pnpm build`, `typecheck`, `lint`, `prettier` all pass.
 
-**Phase 2 gate: one item outstanding.**
+**Phase 2 gate: CLOSED, all items.** The thirty-second capture measurement was performed on a real phone on 2026-08-20 and **passes** — to be re-checked after the Phase 7 high-fidelity design pass, since that pass changes the surface being measured. The `docs/spec.md` §10 question was settled the same day: the isolated availability-check submission **stands as written**, recorded in §10 with §5.5's "Under review" note replaced. Housekeeping run, `tasks/phase-3.md` generated and reviewed.
 
-1. **THE THIRTY-SECOND CAPTURE MEASUREMENT — the human's, on a real phone. STILL OUTSTANDING.** `docs/META-PLAN.md` §6 calls it the single most important measurement in the project. `/bookings/new` is the surface — **admin-only**, behind the session guard; the customer intake forms are `/new` and `/s/[slug]` in Phase 3. A miss is a **product finding**: the fix belongs in `docs/spec.md` §5.1 before it belongs in code.
-2. ~~The `docs/spec.md` §10 evaluation~~ — **SETTLED 2026-08-20: the rule stands as written.** Recorded in `docs/spec.md` §10, and the "Under review" note in §5.5 replaced.
-3. ~~Housekeeping session~~ — run 2026-08-20.
-4. **`tasks/phase-3.md`** — not yet generated.
+**Phase 3 may begin at Task 3.1.** Five tasks: link storage and rate limiting; `/s/[slug]` dispatch; the intake and booking forms; the customer portal; and the admin copy-link actions.
 
-**An observation the human raised, not yet acted on:** `docs/spec.md` §5.1 sets a thirty-second acceptance target for the ADMIN capture, but §5.2 (public intake) and §5.3 (pre-addressed booking form) set **no time target at all** — and a customer who abandons a form is a lost booking, while a slow admin is mildly annoyed. Worth deciding before Phase 3 plans those surfaces. Not resolved here.
+**NEW IN THE SPEC, 2026-08-20 — time-to-intake targets.** `docs/spec.md` §5.2 and §5.3 now carry acceptance targets: **two minutes** for the public intake, **ninety seconds** for the pre-addressed form. Added on the human's judgement that a customer who abandons a form is a lost booking while a slow admin is only inconvenienced — the reverse of how §5.1's target had been weighted. **Both figures are first proposals** and are to be confirmed or replaced at the Phase 3 review gate, once the forms exist.
+
+**A SPEC INCONSISTENCY FOR THE HUMAN TO CORRECT.** `docs/spec.md` §6.1 says slugs draw on "28 characters and roughly 17 million combinations". That arithmetic does not hold: Crockford base32 is already 32 characters *because* `I`, `L`, `O`, and `U` are excluded from it, so they cannot be removed again. `tasks/phase-0.md` resolved this correctly and `src/core/slug.ts` implements 32 characters and 33,554,432 combinations, with a test asserting the alphabet. **The code is right and the spec sentence is wrong**; the correction is a human's edit and is on the Phase 3 completion checklist.
 
 **Decisions the human owns**, in `docs/phase-2-retro.md` with recommendations: `resolveEffectiveInstructions` placement; the absent `visits.created_by` column; plus the five carried from Phase 0.
 

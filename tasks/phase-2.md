@@ -188,7 +188,8 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [x] All tasks above marked `[x]`
 - [x] `pnpm test:unit` (220), `pnpm test:integration` (190), `pnpm test:e2e` (77) all pass with zero failures
 - [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] **Review gate, by hand — TIME THE CAPTURE FLOW ON A REAL PHONE against the thirty second target.** **STILL OUTSTANDING.** `docs/META-PLAN.md` §6 calls this the single most important measurement in the project. A miss is a product finding, not a performance bug: do not optimize the round trip and call it fixed. The likely cause is too many fields or too many taps, and the fix belongs in `docs/spec.md` §5.1 first
+- [x] **Review gate — the capture flow was timed on a real phone and PASSES against the thirty second target, 2026-08-20.** To be re-checked after the Phase 7 high-fidelity design pass, since that pass changes the surface being measured. Original guidance retained below.
+  *(`docs/META-PLAN.md` §6 calls this the single most important measurement in the project. A miss is a product finding, not a performance bug. The likely cause is too many fields or taps, and the fix belongs in `docs/spec.md` §5.1 first.)*
 - [x] **Review gate — the `docs/spec.md` §10 open question was EVALUATED AND SETTLED on 2026-08-20: the rule stands as written.** Recorded in `docs/spec.md` §10, and the "Under review" note in §5.5 replaced.
 - [x] **Review gate:** route handlers and server actions are thin — `src/services/attribution.test.ts` asserts no action file imports `drizzle-orm` or calls `db()`.
 - [x] **Review gate:** every surface reads status from `deriveStatus` — grepped; no status literal appears in any `.tsx` outside a `data-status` attribute.
@@ -198,7 +199,7 @@ Full bodies, acceptance criteria, and must-not-do lists are in the git history a
 - [x] `docs/user-journeys.md` reviewed, coverage table updated
 - [x] Phase retrospective written to `docs/phase-2-retro.md`
 - [x] Housekeeping session run — 2026-08-20
-- [ ] `tasks/phase-3.md` generated, reviewed, and committed
+- [x] `tasks/phase-3.md` generated, reviewed, and committed — 2026-08-20
 
 ---
 

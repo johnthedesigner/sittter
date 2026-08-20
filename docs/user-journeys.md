@@ -291,6 +291,14 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 8.1.5 | `e2e/journey-8.spec.ts` | an unregistered email shows the SAME message | 1 |
 | 8.1.6 | `e2e/journey-8.spec.ts` | the session survives a new browser context on the same device | 1 |
 
+> **Phase boundary review, 2026-08-20 (Phase 2 → Phase 3).** `tasks/phase-3.md` read in full. Phase 3 enables every step of Journeys 2, 3, and 5 — the public intake, the pre-addressed booking form, and the customer portal — plus step **1.3.8**, which Phase 2 deliberately excluded because the confirmation email carries a portal link.
+>
+> **One journey needed no change but gained a target.** `docs/spec.md` §5.2 and §5.3 now carry time-to-intake acceptance targets — two minutes for the public intake, ninety seconds for the pre-addressed form — added on 2026-08-20 after the human observed that a customer who abandons a form is a lost booking, while a slow admin is only inconvenienced. Both figures are first proposals to be confirmed once the forms exist. Journeys 2 and 3 describe the steps; the targets live in the spec.
+>
+> **Deferrals revisited.** 4.1 and 4.2 remain uncovered until Phase 4 (visit logging with photos). Journey 5's past-engagement steps are built in Phase 3 but show no photos until Phase 4 — the portal renders what exists.
+>
+> No journey was added, extended, or revised.
+
 > **Phase boundary review, 2026-08-19 (Phase 1 → Phase 2).** `tasks/phase-2.md` read in full. Phase 2 enables 30 steps across Journeys 1, 4, and 9 — every step of Journey 1 except **1.3.8**, all of 4.3, and all of 9.1. No journey needed adding, extending, or revising: the task file was written from these journeys rather than the reverse.
 >
 > **1.3.8 is deliberately not a Phase 2 step.** It expects a confirmation email carrying a portal link. `docs/spec.md` §5.5 describes that email as part of the confirmation stage, but links do not exist until Phase 3 — so the state transition happens in Phase 2 and the notification in Phase 3. `tasks/phase-2.md` Task 2.4 carries an explicit must-not-do saying so, because it is an easy thing to pull in by mistake while reading §5.5.
