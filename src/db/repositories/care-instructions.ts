@@ -71,3 +71,16 @@ export async function listCareInstructionsForProperties(
     )
     .orderBy(careInstructions.sortOrder)
 }
+
+export async function updateCareInstruction(
+  businessId: string,
+  id: string,
+  patch: Partial<Omit<NewCareInstruction, 'businessId' | 'id'>>
+): Promise<CareInstructionRow | null> {
+  const [row] = await db()
+    .update(careInstructions)
+    .set(patch)
+    .where(and(eq(careInstructions.businessId, businessId), eq(careInstructions.id, id)))
+    .returning()
+  return row ?? null
+}

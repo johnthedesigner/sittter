@@ -10,6 +10,14 @@ import { StatusChip } from '@/components/StatusChip'
 import { FlagIndicator } from '@/components/FlagIndicator'
 import { formatAttribution, formatCalendarDate, formatRange } from '@/components/format'
 import { ACTIVITY_SOURCE_LABELS } from '@/components/activity'
+import {
+  CareInstructionsSection,
+  DatesSection,
+  PropertySection,
+} from '@/components/BookingSections'
+import type { InstructionView } from '@/components/BookingSections'
+import { effectiveInstructionsForBooking } from '@/services/care-instructions'
+import { getProperty } from '@/db/repositories/properties'
 import { env } from '@/lib/env'
 
 import { requireAdmin } from '../../layout'
@@ -17,11 +25,12 @@ import { requireAdmin } from '../../layout'
 /**
  * The booking detail screen.
  *
- * PARTIAL. Task 2.2 builds only what journey step 1.1.7 asserts — that the
- * screen loads after capture, shows the derived status, and shows the note as
- * the first activity entry. Task 2.3 adds the dates section and care
- * instructions, 2.4 the confirmation toggles, 2.5 visits, 2.6 pricing, and
- * 2.7 manual activity entry.
+ * Sections, in the order `docs/spec.md` §5.4 gives them: header, dates, care
+ * instructions, visits, pricing, activity, links.
+ *
+ * Built so far: header, dates, care instructions, property details, and a
+ * read-only activity list. Task 2.4 adds the confirmation toggles, 2.5
+ * visits, 2.6 pricing, 2.7 manual activity entry.
  */
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { businessId } = await requireAdmin()
@@ -30,9 +39,11 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const summary = await getBookingSummary(businessId, id)
   if (summary === null) notFound()
 
-  const [activity, admins] = await Promise.all([
+  const [activity, admins, property, effective] = await Promise.all([
     listActivityForBooking(businessId, id),
     listAdmins(businessId),
+    getProperty(businessId, summary.booking.propertyId),
+    effectiveInstructionsForBooking(businessId, summary.booking.propertyId, id),
   ])
   const nameById = new Map(admins.map((a) => [a.id, a.name]))
 
@@ -79,6 +90,49 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           />
         </div>
       </header>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Dates</h2>
+        <DatesSection
+          bookingId={booking.id}
+          startDate={booking.startDate}
+          endDate={booking.endDate}
+          datesApproximate={booking.datesApproximate}
+        />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Care instructions</h2>
+        <CareInstructionsSection
+          bookingId={booking.id}
+          propertyId={booking.propertyId}
+          instructions={effective.map((e): InstructionView => ({
+            id: e.instruction.id,
+            label: e.instruction.label,
+            detail: e.instruction.detail,
+            cadence: e.instruction.cadence,
+            cadenceCustom: e.instruction.cadenceCustom,
+            weatherRelevant: e.instruction.weatherRelevant,
+            sortOrder: e.instruction.sortOrder,
+            isOverride: e.isOverride,
+            shadowsLabel: e.shadows?.label ?? null,
+          }))}
+        />
+      </section>
+
+      {property !== null && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold tracking-tight">Property</h2>
+          <PropertySection
+            bookingId={booking.id}
+            propertyId={property.id}
+            nickname={property.nickname}
+            address={property.address}
+            accessNotes={property.accessNotes}
+            accessCodes={property.accessCodes}
+          />
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold tracking-tight">Activity</h2>

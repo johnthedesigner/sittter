@@ -214,8 +214,8 @@ The capture screen and `createBooking`. This is the task the product's central p
 
 ### Task 2.3 — Booking detail: header, dates, and care instructions
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.2
 
 **What this task implements:**
@@ -231,20 +231,20 @@ The booking detail screen's first three sections, and care instruction editing i
 **Journey steps enabled:** 1.2.1, 1.2.2, 1.2.3, 1.2.4, 1.2.5.
 
 **Acceptance criteria:**
-- [ ] The header shows customer name, property nickname, service range, status chip, and both flag indicators (spec §5.4)
-- [ ] An instruction added from the booking attaches to the **property** by default (step 1.2.2)
-- [ ] The "This booking only" toggle makes it a booking-level override instead, and the property's own instruction is left untouched
-- [ ] A booking-level override **shadows** the property instruction of the same label rather than appearing alongside it
-- [ ] Cadence options render the Reference data labels exactly, and `Custom` stores free text in `cadence_custom`
-- [ ] `weatherRelevant` is settable and persists (step 1.2.3)
-- [ ] The property address is editable from the booking and persists (step 1.2.4)
-- [ ] **The access code field is visibly labelled admin-only on screen** (step 1.2.5)
-- [ ] Changing dates writes a `{Admin} changed the dates to {start}–{end}.` system entry
-- [ ] An end date preceding the start date is rejected, and the database check constraint is never the thing that reports it to a user
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] The header shows customer name, property nickname, service range, status chip, and both flag indicators (spec §5.4)
+- [x] An instruction added from the booking attaches to the **property** by default (step 1.2.2)
+- [x] The "This booking only" toggle makes it a booking-level override instead, and the property's own instruction is left untouched
+- [x] A booking-level override **shadows** the property instruction of the same label rather than appearing alongside it
+- [x] Cadence options render the Reference data labels exactly, and `Custom` stores free text in `cadence_custom`
+- [x] `weatherRelevant` is settable and persists (step 1.2.3)
+- [x] The property address is editable from the booking and persists (step 1.2.4)
+- [x] **The access code field is visibly labelled admin-only on screen** (step 1.2.5)
+- [x] Changing dates writes a `{Admin} changed the dates to {start}–{end}.` system entry
+- [x] An end date preceding the start date is rejected, and the database check constraint is never the thing that reports it to a user
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not build the confirmation toggles — that is Task 2.4

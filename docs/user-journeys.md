@@ -263,6 +263,11 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 1.1.4 | `e2e/journey-1.spec.ts` | choosing create shows the name and defaults to a new property | 2 |
 | 1.1.5 | `e2e/journey-1.spec.ts` | entering both dates turns "Dates are approximate" on | 2 |
 | 1.1.6, 1.1.7 | `e2e/journey-1.spec.ts` | capture saves and the detail screen shows Tentative and the note | 2 |
+| 1.2.1 | `e2e/journey-1.spec.ts` | opening a booking from the list shows its detail screen | 2 |
+| 1.2.2 | `e2e/journey-1.spec.ts` | an instruction added from a booking attaches to the property | 2 |
+| 1.2.3 | `e2e/journey-1.spec.ts` | an instruction can be weather relevant with a different cadence | 2 |
+| 1.2.4 | `e2e/journey-1.spec.ts` | the property address is editable from the booking | 2 |
+| 1.2.5 | `e2e/journey-1.spec.ts` | the access code field is visibly labelled admin only | 2 |
 | 1.3.2 | `e2e/journey-1.spec.ts` | one flag set and one unset is visible without opening the booking | 2 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |

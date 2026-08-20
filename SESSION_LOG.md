@@ -2,32 +2,29 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 2 of 7 tasks complete
-**Next task:** 2.3 — Booking detail: header, dates, and care instructions
+**Phase:** 2 — Admin surface — In progress, 3 of 7 tasks complete
+**Next task:** 2.4 — The two confirmation actions — **the task carrying the `docs/spec.md` §10 open question**
 
-**What's built in Phase 2:** the admin shell, `/home`, `/bookings` (filterable, both flags as columns), `/customers`, `/bookings/new` (fast capture), and a **partial** `/bookings/[id]`.
+**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, dates, care instructions (with booking-level overrides), property details, and a read-only activity list.
 
-**Tests:** 220 unit, 119 integration, 32 end-to-end.
+**Tests:** 220 unit, 139 integration, 44 end-to-end.
 
-**`/bookings/[id]` is deliberately partial.** Journey step 1.1.7 requires the detail screen to load after capture and show the derived status and the note, so Task 2.2 built the header and the activity list. **Task 2.3 owns the rest** — the dates section and care instructions — and extends this page rather than creating it. Task 2.7 adds manual activity entry; the list is read-only today.
+**What Task 2.4 must know:**
+- **Do not resolve the §10 open question.** Build the isolated availability-check submission exactly as `docs/spec.md` §5.5 specifies. If the friction is real, record the observation here and leave the behaviour alone — the human decides at the phase gate.
+- **Do not send the confirmation email.** §5.5 describes one carrying a portal link; links are Phase 3 and so is that email.
+- `changeBookingDates` in `src/services/bookings.ts` is the model for a transition: validate, write, then write the Reference data system entry attributed to the acting admin. It writes no entry when nothing actually changed — worth copying.
+- `actingAdmin()` is exported from `src/app/(admin)/actions/bookings.ts`.
+- The detail page already renders both `FlagIndicator`s in its header, with `formatAttribution` producing `Checked by Kate, Aug 4`. Task 2.4 adds the toggles, not the display.
 
-**What Task 2.3 can rely on:**
-- `captureBooking`, `validateCapture`, and `CaptureError` in `src/services/bookings.ts`. `validateCapture` returns a sentence a person can act on, or null; the database's `range_ordered` constraint is a backstop that a user must never be the one to discover.
-- The `actingAdmin()` helper in `src/app/(admin)/actions/bookings.ts` resolves the acting admin for a server action, where `requireAdmin()`'s redirect semantics are wrong.
-- `ACTIVITY_SOURCE_LABELS` in `src/components/activity.ts`, `ActivitySource` in `src/core/types.ts`.
-- `searchCustomersByName`, `listCustomersForCapture` on the customers repository.
+**A judgement call worth revisiting:** `resolveEffectiveInstructions` in `src/services/care-instructions.ts` is a pure function that would sit naturally in `src/core/`. It is in the service layer because `tasks/phase-2.md` states nothing under `src/core/` is modified this phase. It is written as a pure function, so moving it later is free.
 
-**A resolved reference-data detail:** `docs/spec.md` §5.1 says the capture note is written with source `admin capture`. There is no such value in the `activity_source` enum. `tasks/phase-2.md` Reference data resolves it to `app` with `is_system` false, which is what was built.
+**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged. `docs/dev-plan.md` describes the home screen that way; nothing in `docs/spec.md` defines that filter, there is no assignment model, and §5.11 says the equivalent digest content is "identical for every recipient".
 
-**An unspecified default that was chosen:** a brand-new customer gets a property nicknamed **`Home`** (`DEFAULT_PROPERTY_NICKNAME`). `properties.nickname` is NOT NULL and nothing specifies what a captured property should be called. Renameable in Task 2.3.
-
-**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged from Task 2.1. `docs/dev-plan.md` describes the home screen that way; nothing in `docs/spec.md` defines that filter, there is no assignment model, and §5.11 says the equivalent digest content is "identical for every recipient". The screen shows the same content to every admin.
-
-**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1` and never reuses a server.
+**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1`.
 
 **Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; the `photos/[id]/route.ts` discrepancy. Plus the `/home` filtering gap.
 
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone** — *the surface it measures now exists at `/bookings/new`, so this can be done any time* — and the **`docs/spec.md` §10 evaluation** (Task 2.4).
+**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone** — the surface exists at `/bookings/new` and this can be done any time — and the **`docs/spec.md` §10 evaluation**, which needs Task 2.4 first.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
@@ -36,6 +33,50 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.3: Booking detail — header, dates, and care instructions
+
+**What was done:**
+- `src/services/care-instructions.ts` — `resolveEffectiveInstructions`, upsert, delete
+- `src/services/bookings.ts` — `changeBookingDates`, `updatePropertyDetails`
+- `src/db/repositories/care-instructions.ts` — `updateCareInstruction`
+- `src/app/(admin)/actions/care-instructions.ts`, and date and property actions
+- `src/components/BookingSections.tsx`, `src/components/cadence.ts`
+- `src/services/care-instructions.test.ts` (12), `src/services/dates.test.ts` (8), 12 more e2e specs
+
+**An architectural rule I broke and fixed within the session.**
+
+The first version of `src/services/care-instructions.ts` called `db().update(careInstructions)` directly, to update an instruction in place. AGENTS.md is explicit: there is no SQL and no Drizzle query builder call outside `src/db/repositories/`. It typechecked, it would have worked, and it would have been the first crack in the boundary that Phase 1 spent a whole task establishing. Caught by running the grep that the phase review gate asks for, rather than by noticing while writing it. `updateCareInstruction` now exists on the repository and the service calls it. **The lesson is that the gate greps are worth running per task, not per phase.**
+
+**Decisions made:**
+
+- **A booking-level override shadows the property instruction of the same label rather than appearing beside it.** Otherwise a sitter reads two conflicting rules for one task and has to guess. Matching is trimmed and case-insensitive, because "Cats" and "cats " are the same instruction to everyone except a string comparison.
+- **Ownership is not editable in place.** An instruction cannot be moved between a property and a booking by updating it, because that silently turns a standing arrangement into a one-off or the reverse. Toggling "This booking only" writes a new record, which is visible.
+- **A date change does NOT regenerate visits.** `docs/dev-plan.md` §7.3 makes `regenerateVisits` its own action, and Task 2.5 builds it that way. A date change silently rebuilding a schedule could discard logged visits without anyone choosing to.
+- **No system entry is written when the dates did not actually change.** Saving the form unchanged should not fill the activity log with noise. Tested.
+- **The admin-only fields sit inside a labelled `fieldset`, not merely near a note.** Journey step 1.2.5 asks for the field to be visibly labelled admin-only; the label is how an admin knows a garage code is safe to type there.
+- **`resolveEffectiveInstructions` lives in the service layer, not `src/core/`,** because this phase does not modify `src/core/`. It is pure, so moving it later costs nothing. Recorded as a judgement call rather than a conclusion.
+
+**Not done:**
+- **The confirmation toggles** — Task 2.4, which also carries the §10 open question.
+- **Visits, pricing, manual activity entry** — Tasks 2.5, 2.6, 2.7.
+- **No visit regeneration on a date change**, deliberately.
+- **No customer-facing read of access codes or notes** exists anywhere; the repository functions that serve customer surfaces still name their columns.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 139 tests |
+| `pnpm test:e2e` | PASS — 44 tests |
+| `pnpm build` | PASS |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+| Drizzle query builder outside `src/db/` | none |
+
+---
 
 ## 2026-08-19 — Task 2.2: Fast capture
 

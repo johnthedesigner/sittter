@@ -15,9 +15,17 @@ import { compareDates, isValidCalendarDate } from '@/core/dates'
 import type { CalendarDate } from '@/core/types'
 
 import { createActivityEntry } from '@/db/repositories/activity'
-import { createBooking as createBookingRow } from '@/db/repositories/bookings'
+import {
+  createBooking as createBookingRow,
+  getBooking,
+  updateBooking,
+} from '@/db/repositories/bookings'
 import { createCustomer } from '@/db/repositories/customers'
-import { createProperty, listPropertiesForCustomer } from '@/db/repositories/properties'
+import {
+  createProperty,
+  listPropertiesForCustomer,
+  updateProperty as updatePropertyRow,
+} from '@/db/repositories/properties'
 
 /** Default nickname for the property created alongside a brand-new customer. */
 export const DEFAULT_PROPERTY_NICKNAME = 'Home'
@@ -154,4 +162,106 @@ export async function captureBooking(
 /** Properties belonging to a customer, for the capture form's property select. */
 export async function propertiesForCustomer(businessId: string, customerId: string) {
   return listPropertiesForCustomer(businessId, customerId)
+}
+
+// ── Date changes ─────────────────────────────────────────────────────
+
+export interface DateChangeInput {
+  startDate: string | null
+  endDate: string | null
+  datesApproximate: boolean
+}
+
+/**
+ * Change a booking's service range.
+ *
+ * Validated before the write, for the same reason capture is: the
+ * `range_ordered` constraint is a backstop, not an error message.
+ *
+ * DOES NOT REGENERATE VISITS. `docs/dev-plan.md` §7.3 describes
+ * `regenerateVisits` as its own explicit action, and Task 2.5 builds it that
+ * way — a date change silently rebuilding a schedule could discard logged
+ * visits without anyone choosing to.
+ */
+export async function changeBookingDates(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  input: DateChangeInput,
+  today: CalendarDate
+): Promise<void> {
+  const existing = await getBooking(businessId, bookingId)
+  if (existing === null) throw new CaptureError('That booking no longer exists.')
+
+  const problem = validateCapture({
+    customerId: 'present-so-only-the-dates-are-checked',
+    newCustomerName: null,
+    propertyId: null,
+    newPropertyNickname: null,
+    startDate: input.startDate,
+    endDate: input.endDate,
+    datesApproximate: input.datesApproximate,
+    note: null,
+  })
+  if (problem !== null) throw new CaptureError(problem)
+
+  const startDate = input.startDate !== null && input.startDate.length > 0 ? input.startDate : null
+  const endDate = input.endDate !== null && input.endDate.length > 0 ? input.endDate : null
+
+  const changed = existing.startDate !== startDate || existing.endDate !== endDate
+
+  await updateBooking(businessId, bookingId, {
+    startDate,
+    endDate,
+    datesApproximate: input.datesApproximate,
+  })
+
+  if (changed) {
+    const range = startDate === null || endDate === null ? 'no dates' : `${startDate}–${endDate}`
+    await createActivityEntry(businessId, {
+      bookingId,
+      note: `${actingAdminName} changed the dates to ${range}.`,
+      source: 'app',
+      entryDate: today,
+      actorId: actingAdminId,
+      isSystem: true,
+    })
+  }
+}
+
+// ── Property details ─────────────────────────────────────────────────
+
+export interface PropertyDetailsInput {
+  nickname: string
+  address: string | null
+  accessNotes: string | null
+  accessCodes: string | null
+}
+
+/**
+ * Update the property a booking is for.
+ *
+ * `accessNotes` and `accessCodes` are ADMIN ONLY. They are written here and
+ * read only by admin surfaces; the customer-facing reads in
+ * `src/db/repositories/properties.ts` name their columns and cannot return
+ * either. See AGENTS.md.
+ */
+export async function updatePropertyDetails(
+  businessId: string,
+  propertyId: string,
+  input: PropertyDetailsInput
+): Promise<void> {
+  const nickname = input.nickname.trim()
+  if (nickname.length === 0) throw new CaptureError('A property needs a nickname.')
+
+  const blankToNull = (value: string | null) =>
+    value === null || value.trim().length === 0 ? null : value.trim()
+
+  await updatePropertyRow(businessId, propertyId, {
+    nickname,
+    address: blankToNull(input.address),
+    accessNotes: blankToNull(input.accessNotes),
+    accessCodes: blankToNull(input.accessCodes),
+  })
 }

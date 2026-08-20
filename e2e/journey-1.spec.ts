@@ -2,8 +2,8 @@
  * Journey 1 — A neighbor asks in person, and the booking becomes confirmed.
  * Covers docs/user-journeys.md steps 1.1.1 and 1.3.2 so far.
  *
- * Later steps arrive with the tasks that build them: 1.2.x in Task 2.3,
- * 1.3.1–1.3.5 in Task 2.4, 1.3.6 in Task 2.5.
+ * Later steps arrive with the tasks that build them: 1.3.1–1.3.5 in Task 2.4,
+ * 1.3.6 in Task 2.5.
  */
 
 import { ADMIN_STATUS_LABELS } from '../src/components/status'
@@ -229,4 +229,181 @@ test('the capture form fits one-handed on a phone', async ({ page }) => {
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   )
   expect(overflows).toBe(false)
+})
+
+// ── Filling in the details later, steps 1.2.1 through 1.2.5 ──────────
+
+/** Open the seeded inquiry booking, which has no care instructions. */
+async function openSeededInquiry(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+}
+
+test('1.2.1 — opening a booking from the list shows its detail screen', async ({ page }) => {
+  await page.goto('/bookings')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+  await expect(page.getByTestId('booking-customer')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Care instructions' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Dates' })).toBeVisible()
+})
+
+test('1.2.2 — an instruction added from a booking attaches to the property', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('add-instruction').click()
+  await page.getByTestId('instruction-label').fill('Cats')
+  await page.getByTestId('instruction-detail').fill('Half a tin, morning only.')
+  await page.getByTestId('instruction-cadence').selectOption('every_day')
+  await page.getByTestId('save-instruction').click()
+
+  const added = page.getByTestId('instruction').filter({ hasText: 'Cats' })
+  await expect(added).toHaveCount(1)
+  // Attached to the property, so it is not marked as a booking-only override.
+  await expect(added).toHaveAttribute('data-override', 'false')
+  await expect(added).toContainText('Every day')
+})
+
+test('1.2.3 — an instruction can be weather relevant with a different cadence', async ({
+  page,
+}) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('add-instruction').click()
+  await page.getByTestId('instruction-label').fill('Plants')
+  await page.getByTestId('instruction-cadence').selectOption('every_other_day')
+  await page.getByTestId('instruction-weather').check()
+  await page.getByTestId('save-instruction').click()
+
+  const added = page.getByTestId('instruction').filter({ hasText: 'Plants' })
+  await expect(added).toHaveCount(1)
+  await expect(added).toContainText('Every other day')
+  await expect(added).toContainText('weather relevant')
+})
+
+test('"This booking only" makes an override that shadows the property instruction', async ({
+  page,
+}) => {
+  // The seeded confirmed booking's property already has "Feed the cat".
+  await page.goto('/bookings?status=confirmed')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  const before = await page.getByTestId('instruction').count()
+
+  await page.getByTestId('add-instruction').click()
+  await page.getByTestId('instruction-label').fill('Feed the cat')
+  await page.getByTestId('instruction-detail').fill('Twice a day this time')
+  await page.getByTestId('instruction-cadence').selectOption('every_day')
+  await page.getByTestId('instruction-booking-only').check()
+  await page.getByTestId('save-instruction').click()
+
+  // Shadowed, not added alongside: the count is unchanged.
+  await expect(page.getByTestId('instruction')).toHaveCount(before)
+
+  const overridden = page.getByTestId('instruction').filter({ hasText: 'Feed the cat' })
+  await expect(overridden).toHaveAttribute('data-override', 'true')
+  await expect(overridden).toContainText('Twice a day this time')
+  await expect(overridden.getByTestId('override-badge')).toBeVisible()
+})
+
+test('a custom cadence stores its free text', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('add-instruction').click()
+  await page.getByTestId('instruction-label').fill('Odd job')
+  await page.getByTestId('instruction-cadence').selectOption('custom')
+  await page.getByTestId('instruction-cadence-custom').fill('Whenever it rains')
+  await page.getByTestId('save-instruction').click()
+
+  const added = page.getByTestId('instruction').filter({ hasText: 'Odd job' })
+  await expect(added).toContainText('Custom')
+  await expect(added).toContainText('Whenever it rains')
+})
+
+test('every cadence label matches the reference data', async ({ page }) => {
+  await openSeededInquiry(page)
+  await page.getByTestId('add-instruction').click()
+
+  const options = await page.getByTestId('instruction-cadence').locator('option').allTextContents()
+  expect(options).toEqual([
+    'Every day',
+    'Every other day',
+    'Every third day',
+    'Once at the start',
+    'Once at the end',
+    'As needed',
+    'Custom',
+  ])
+})
+
+test('1.2.4 — the property address is editable from the booking', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('property-address').fill('14 Maple Street')
+  await page.getByTestId('save-property').click()
+
+  await page.reload()
+  await expect(page.getByTestId('property-address')).toHaveValue('14 Maple Street')
+})
+
+test('1.2.5 — the access code field is visibly labelled admin only', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  const adminOnly = page.getByTestId('admin-only-fields')
+  await expect(adminOnly).toBeVisible()
+  await expect(adminOnly).toContainText('Admin only')
+  await expect(adminOnly).toContainText('never shown to the customer')
+  // The access code input is inside that labelled region, not merely near it.
+  await expect(adminOnly.getByTestId('property-access-codes')).toBeVisible()
+})
+
+test('1.2.5 — a garage code saves and reads back', async ({ page }) => {
+  await openSeededInquiry(page)
+  await page.getByTestId('property-access-codes').fill('4417')
+  await page.getByTestId('save-property').click()
+  await page.reload()
+  await expect(page.getByTestId('property-access-codes')).toHaveValue('4417')
+})
+
+test('changing the dates writes a system activity entry', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('detail-start-date').fill('2026-09-01')
+  await page.getByTestId('detail-end-date').fill('2026-09-07')
+  await page.getByTestId('save-dates').click()
+
+  await expect(page.getByTestId('booking-range')).toContainText('Sep 1')
+  const system = page.getByTestId('activity-entry').filter({ hasText: 'changed the dates' })
+  await expect(system).toHaveCount(1)
+  await expect(system).toHaveAttribute('data-system', 'true')
+})
+
+test('an inverted range is rejected with a message, not a database error', async ({ page }) => {
+  await openSeededInquiry(page)
+
+  await page.getByTestId('detail-start-date').fill('2026-09-07')
+  await page.getByTestId('detail-end-date').fill('2026-09-01')
+  await page.getByTestId('save-dates').click()
+
+  await expect(page.getByTestId('dates-error')).toHaveText(
+    'The end date cannot be before the start date.'
+  )
+})
+
+test('an instruction can be deleted', async ({ page }) => {
+  await openSeededInquiry(page)
+  await page.getByTestId('add-instruction').click()
+  await page.getByTestId('instruction-label').fill('Temporary')
+  await page.getByTestId('save-instruction').click()
+  await expect(page.getByTestId('instruction').filter({ hasText: 'Temporary' })).toHaveCount(1)
+
+  await page
+    .getByTestId('instruction')
+    .filter({ hasText: 'Temporary' })
+    .getByTestId('delete-instruction')
+    .click()
+  await expect(page.getByTestId('instruction').filter({ hasText: 'Temporary' })).toHaveCount(0)
 })
