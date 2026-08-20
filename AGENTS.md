@@ -508,6 +508,62 @@ export const EMPTY_VISIT_STATE = { error: null, warning: null }
 
 Established because: one exported object broke the entire booking detail screen, and thirteen specs across a different journey failed with "expected 1, received 0" for elements whose absence had nothing to do with them. Audit with: `for f in $(grep -rl "^'use server'" src/app); do grep -nE '^export (const|let|var|class)' "$f"; done`
 
+### A slow write and a wrong write look identical in a test report
+
+A server action that grew — confirmation now also generates visits and snapshots pricing — outran a default assertion timeout and read as the wrong value. The tempting fix is to loosen the assertion, which hides the next real failure.
+
+```ts
+// wrong — races the action, and reports "Tentative" for a booking that is
+// about to be Confirmed
+await page.getByTestId('toggle-availability').click()
+await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
+
+// correct — wait for something that PROVES the write landed, then assert
+await page.getByTestId('toggle-availability').click()
+await expect(page.getByTestId('availability-attribution')).toBeVisible({ timeout: 15_000 })
+await expect(page.getByTestId('status-chip')).toHaveText('Confirmed', { timeout: 15_000 })
+```
+
+Established because: five separate failures in Phase 2 were races rather than defects — a reload that outran a write, a `goto` aborted by an in-flight action, an assertion that outgrew its timeout. **And once it was the reverse:** an intermittent integration timeout was pointing at a service that repeated three database round trips it had already made. Look at what the test is waiting for before raising a timeout.
+
+### Run the phase gate greps per task, not per phase
+
+The Phase 2 gate asks whether any Drizzle call exists outside `src/db/`. Running that grep while writing Task 2.3 caught a service calling `db().update()` directly — code that typechecked, passed its tests, and would have shipped.
+
+```sh
+# cheap enough to run every task
+grep -rln "from 'drizzle-orm" --include='*.ts' --include='*.tsx' src | grep -v '^src/db/'
+grep -rlnE "'(tentative|confirmed|in_progress)'" src/app --include='*.tsx' | grep -v data-status
+```
+
+Established because: a boundary violation is invisible to the compiler and to the tests. The gate catches it — but only if it is run before the code is buried under three more tasks.
+
+### An e2e build and a running dev server fight over .next
+
+Playwright builds the app to test against it. A developer's `next dev` writes the same directory, and the two contend badly enough to hang the build outright rather than fail it.
+
+```ts
+// next.config.ts
+distDir: process.env.NEXT_DIST_DIR ?? '.next'
+
+// playwright.config.ts — its own directory, never shared
+env: { ...testEnv, NEXT_DIST_DIR: '.next-e2e' }
+```
+
+Established because: `pnpm test:e2e` hung for over ten minutes with no output while `pnpm build` sat waiting. Remember to add the new directory to `.gitignore`, `eslint.config.mjs` ignores, and `.prettierignore` — the build output produced 2,213 lint errors before that.
+
+### Surface an action, or it does not exist
+
+`signOut` was written in Task 1.5, tested at the service layer, and never given a button. Switching admins meant clearing cookies by hand, and it took someone getting stuck signed in as the wrong person to notice.
+
+```
+// the check, per task:
+//   every action written this task — is it reachable from the UI?
+//   every screen built this task — is it reachable from the navigation?
+```
+
+Established because: `/settings` shipped in Task 2.6 with no nav link, and `signOut` shipped in Phase 1 with no control. Both were complete, tested, and unreachable. `e2e/journey-1.spec.ts` now asserts every built screen is reachable from the primary navigation.
+
 ### An end-to-end test cannot follow a real magic link, and should not try
 
 Only the SHA-256 hash is stored, so there is no way to recover a plaintext token from the database — which is the property the design is aiming for. Reading a real inbox would be slow, flaky, and would send mail on every run.

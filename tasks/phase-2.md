@@ -123,299 +123,63 @@ Measured **on a real phone, by hand, with a stopwatch**, at the phase review gat
 
 ---
 
-## Tasks
+## Tasks — all complete, compressed at the Phase 2 housekeeping session
 
-### Task 2.1 — Admin shell, home, and the booking list
+Full bodies, acceptance criteria, and must-not-do lists are in the git history at commit `d76a6f4` and earlier. Session detail is in `logs/phase-2.md`.
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** none
+### Task 2.1 — Admin shell, home, and the booking list ✓
 
-**What this task implements:**
-The navigation shell every admin screen sits in, the home screen, and the booking list with both confirmation flags as columns. After this task an admin can see the state of the business without opening anything.
-
-**Files to create or modify:**
-- `src/app/(admin)/layout.tsx` — extend the existing guard with navigation and a persistent "New booking" action
-- `src/app/(admin)/home/page.tsx` — replace the Phase 1 stub: today's visits, needs-attention, filtered by the acting admin
-- `src/app/(admin)/bookings/page.tsx` — the list, filterable
-- `src/components/` — status chip, flag indicator, and whatever the list rows need
-- `src/db/repositories/bookings.ts` — add the list read this screen needs
-- `e2e/journey-1.spec.ts` — steps 1.1.1 and 1.3.2
-
-**Journey steps enabled:** 1.1.1, 1.3.2.
-
-**Acceptance criteria:**
-- [x] The booking list shows, per booking: customer name, property nickname, service range, status, and **both confirmation flags as separate columns**
-- [x] An admin can tell from the list alone which of the two flags is missing, without opening the booking (spec §5.5)
-- [x] Status is read from `deriveStatus` — `grep` finds no second status computation anywhere in `src/app/`
-- [x] Status labels match the Reference data table exactly
-- [x] The list is filterable by status, and the filter survives a page reload
-- [x] `/home` shows today's visits and a needs-attention list
-- [x] `/home` renders correctly against the seeded database, whose three bookings are `confirmed`, `tentative`, and `inquiry`
-- [x] Every screen is usable one-handed on a 390px-wide viewport with no horizontal scrolling
-- [x] A "New booking" action is reachable from the home screen without scrolling
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not build the capture form — that is Task 2.2
-- Does not build the booking detail screen — that is Task 2.3
-- Does not compute status inline anywhere; `deriveStatus` is the only source
-- Does not add a `status` column, an enum default, or a cached status field, for query performance or any other reason
+**Output:** the admin shell with navigation, `/home` (today + needs attention), `/bookings` (filterable, both confirmation flags as columns), `/customers`, and the shared `StatusChip`, `FlagIndicator`, and formatters.
+**Key decisions:** Needs-attention reuses `buildDigestModel` so the screen and the morning email cannot disagree. `StatusChip` takes a status, not a booking, so it cannot compute one. `formatCalendarDate` formats from the string's parts, never through a `Date`. **Three toolchain problems:** the unit glob covered only `src/core/` so a new component test silently ran zero tests; Playwright's `reuseExistingServer` adopted the developer's dev server on the wrong branch; and Next 16 permits one dev server per directory, so e2e moved to a production build on :3100.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.2 — Fast capture
+### Task 2.2 — Fast capture ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.1
-
-**What this task implements:**
-The capture screen and `createBooking`. This is the task the product's central premise rests on, and the one measured against the thirty-second target.
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/new/page.tsx` — the capture form
-- `src/app/(admin)/actions/bookings.ts` — `createBooking`
-- `src/services/bookings.ts` — creation, including customer and property when they do not exist
-- `src/db/repositories/customers.ts`, `properties.ts` — search reads the combobox needs
-- `src/services/bookings.test.ts`
-- `e2e/journey-1.spec.ts` — steps 1.1.2 through 1.1.7
-
-**Journey steps enabled:** 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7.
-
-**Acceptance criteria:**
-- [x] The customer field is focused on load (step 1.1.2)
-- [x] Typing a name matching no existing customer offers to create one; selecting it creates a customer with a name and nothing else, and that record is valid in that state
-- [x] A customer with exactly one property has it auto-selected; a customer with more gets a list plus "New property"
-- [x] **The only required field is a customer name.** Saving with everything else empty succeeds
-- [x] Saving with no dates produces a booking deriving `inquiry`; saving with dates produces one deriving `tentative`
-- [x] Entering both dates turns "Dates are approximate" on automatically (step 1.1.5)
-- [x] An end date preceding the start date is rejected before the write, with a message naming the problem
-- [x] The note is written to the activity log as the **first** entry, source `app`, `is_system` false
-- [x] A `{Admin} created this booking.` system entry is written, attributed to the acting admin
-- [x] `bookings.created_by` is set to the acting admin
-- [x] Save returns to the booking detail screen (step 1.1.7)
-- [x] The whole form is reachable and completable one-handed at 390px wide
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not require a property, a date, or a note; a customer name is the only required field
-- Does not geocode the address — that is Phase 6 weather work
-- Does not create a link or send any email
-- Does not optimize the round trip in place of reducing fields and taps; if the target is missed, that is a product finding for `docs/spec.md` §5.1
+**Output:** `/bookings/new`, `captureBooking`, and a partial `/bookings/[id]` — enough for step 1.1.7 to assert.
+**Key decisions:** The only required field is a customer name. Validation runs in the service and returns a sentence; the `range_ordered` constraint is a backstop a user must never meet. The note is written before the system entry so it is genuinely first in the log. Spec §5.1's `admin capture` source has no enum value — Reference data resolved it to `app`. A new customer's property is nicknamed `Home`. **Two bugs of mine:** querying properties with a not-yet-created customer's empty id, and a hidden field rendered inside the wrong branch so the form submitted neither an id nor a name.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.3 — Booking detail: header, dates, and care instructions
+### Task 2.3 — Booking detail: header, dates, and care instructions ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.2
-
-**What this task implements:**
-The booking detail screen's first three sections, and care instruction editing including booking-level overrides.
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/[id]/page.tsx` — header, dates, care instructions
-- `src/app/(admin)/actions/bookings.ts` — `updateBookingDates`
-- `src/app/(admin)/actions/care-instructions.ts` — `upsertCareInstruction`, `deleteCareInstruction`
-- `src/services/bookings.ts` — date changes with activity entries
-- `e2e/journey-1.spec.ts` — steps 1.2.1 through 1.2.5
-
-**Journey steps enabled:** 1.2.1, 1.2.2, 1.2.3, 1.2.4, 1.2.5.
-
-**Acceptance criteria:**
-- [x] The header shows customer name, property nickname, service range, status chip, and both flag indicators (spec §5.4)
-- [x] An instruction added from the booking attaches to the **property** by default (step 1.2.2)
-- [x] The "This booking only" toggle makes it a booking-level override instead, and the property's own instruction is left untouched
-- [x] A booking-level override **shadows** the property instruction of the same label rather than appearing alongside it
-- [x] Cadence options render the Reference data labels exactly, and `Custom` stores free text in `cadence_custom`
-- [x] `weatherRelevant` is settable and persists (step 1.2.3)
-- [x] The property address is editable from the booking and persists (step 1.2.4)
-- [x] **The access code field is visibly labelled admin-only on screen** (step 1.2.5)
-- [x] Changing dates writes a `{Admin} changed the dates to {start}–{end}.` system entry
-- [x] An end date preceding the start date is rejected, and the database check constraint is never the thing that reports it to a user
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not build the confirmation toggles — that is Task 2.4
-- Does not build visits, pricing, or activity sections — those are Tasks 2.5, 2.6, 2.7
-- Does not regenerate visits on a date change; that is Task 2.5's explicit action
-- Does not display access codes on anything but an admin screen
+**Output:** the dates section, care instructions with booking-level overrides, and property details including the admin-only access fields.
+**Key decisions:** A booking-level override **shadows** the property instruction of the same label rather than appearing beside it, matched trimmed and case-insensitively. Ownership is not editable in place. A date change does **not** regenerate visits. No system entry is written when nothing changed. **I broke an architectural rule and fixed it in-session:** the service called `db().update()` directly, caught by running the phase gate's grep during the task — which is now the habit.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.4 — The two confirmation actions
+### Task 2.4 — The two confirmation actions ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.3
-
-**What this task implements:**
-The two independent confirmation toggles, their attribution, and the transition to `Confirmed`. **This is the task carrying the open question in `docs/spec.md` §10.**
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/[id]/page.tsx` — the confirmation section
-- `src/app/(admin)/actions/bookings.ts` — `setDatesFirm`, `setAvailabilityChecked`, `declineBooking`, `cancelBooking`, `markPaid`
-- `src/services/bookings.ts` — transitions with activity entries
-- `e2e/journey-1.spec.ts` — steps 1.3.1 through 1.3.5
-
-**Journey steps enabled:** 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5.
-
-**Acceptance criteria:**
-- [x] Both toggles use the Reference data labels exactly, and neither mentions "status"
-- [x] The two toggles are **visually and physically separated** on screen (spec §5.5)
-- [x] **"Checked the family calendar" is its own submission.** Toggling it cannot be batched with any other change, and a test proves a combined save is not possible
-- [x] Setting either flag records the acting admin and a timestamp; unsetting clears both and writes an activity entry
-- [x] Each flag displays its actor and date once set, in the format `Checked by Kate, Aug 4`
-- [x] **Any admin may set or unset either flag** — there is no role restriction, and a test has a second admin toggle the flag the first did not (steps 1.3.3, 1.3.4)
-- [x] A booking derives `Confirmed` only when both flags are set **and** the range has both dates
-- [x] Setting only one flag leaves the booking `Tentative`, and the list shows one set and one unset (step 1.3.2)
-- [x] `declineBooking` and `cancelBooking` are terminal, and `deriveStatus` reports them ahead of everything else
-- [x] `markPaid` records a paid date and method note, and a booking past its end date with a paid date derives `closed`
-- [x] Every transition writes its Reference data system entry, attributed
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- **Does not relax the isolated-submission rule, and does not resolve the §10 open question.** Build it exactly as specified. If the friction is real, record the observation in `SESSION_LOG.md` and leave the behaviour alone — the human decides at the phase gate
-- **Does not send the confirmation email.** Spec §5.5 describes one carrying a portal link; links are Phase 3 and so is that email
-- Does not generate visits or snapshot pricing here — Tasks 2.5 and 2.6 own those, and this task's transition is what triggers them
-- Does not add a role model or restrict either flag to a particular admin
+**Output:** the two isolated toggles, terminal transitions, payment, and `TRANSITION_ENTRIES`.
+**Key decisions:** The §10 isolation is enforced by a **signature** — `setAvailabilityChecked` takes a booking and a boolean, so a combined save is structurally impossible. Unsetting clears both instant and actor. A no-op toggle writes nothing. **No confirmation email is sent**, and an e2e test asserts zero `email_sends` rows, so it cannot be added by accident before Phase 3.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.5 — Visits: generation and editing
+### Task 2.5 — Visits: generation and editing ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.4
-
-**What this task implements:**
-Visit generation on confirmation, the visit list, and individual visit editing — including the preservation rules that Phase 0 deliberately left to the service layer.
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/[id]/page.tsx` — the visits section
-- `src/app/(admin)/actions/visits.ts` — `regenerateVisits`, `upsertVisit`, `deleteVisit`
-- `src/services/visits.ts` — generation, regeneration, and preservation
-- `src/services/visits.test.ts`
-- `e2e/journey-1.spec.ts` — step 1.3.6; `e2e/journey-4.spec.ts` — steps 4.3.1 through 4.3.4
-
-**Journey steps enabled:** 1.3.6, 4.3.1, 4.3.2, 4.3.3, 4.3.4.
-
-**Acceptance criteria:**
-- [x] Visits are generated on transition to `Confirmed`, using `generateVisits` from `src/core/schedule.ts` — no second scheduling implementation exists
-- [x] A date carrying two instructions produces **one** visit with both tasks (step 1.3.6)
-- [x] Generated visits default to time window `anytime`
-- [x] Instructions returned in `skippedInstructions` are surfaced with the reason `src/core/schedule.ts` already provides
-- [x] An admin can add a visit on a date not generated (step 4.3.1)
-- [x] Deleting an upcoming visit with no log requires no confirmation (step 4.3.2)
-- [x] Deleting a visit **that has a log** requires an explicit confirmation first (step 4.3.3)
-- [x] **Regeneration preserves logged visits**, and the warning names them before proceeding (step 4.3.4)
-- [x] Regeneration is an explicit action, never a side effect of editing dates
-- [x] Every visit write records the acting admin
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not reimplement cadence expansion; `src/core/schedule.ts` is the only scheduler
-- Does not implement visit **logging** — outcome, note, photos are Phase 4
-- Does not silently drop a logged visit under any circumstance
-- Does not regenerate as a side effect of a date change
+**Output:** generation on confirmation, regeneration with preservation, and individual visit editing.
+**Key decisions:** Generation keys off the resulting derived status, not which flag was toggled, and no-ops when a schedule already exists. `planRegeneration` is separate from applying it so the warning can name the logged visits truthfully. Logged visits are preserved unconditionally. **A `'use server'` file may export only async functions** — one exported constant broke the whole detail page and failed thirteen specs in another journey.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.6 — Pricing
+### Task 2.6 — Pricing ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.5
-
-**What this task implements:**
-The pricing section, reading `src/core/pricing.ts`, with component overrides, ad-hoc line items, count overrides, and the snapshot taken on confirmation.
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/[id]/page.tsx` — the pricing section
-- `src/app/(admin)/actions/pricing.ts` — `upsertPricingComponent`, `deletePricingComponent`, `addAdhocLineItem`, `deleteAdhocLineItem`, `overrideCounts`
-- `src/app/(admin)/settings/page.tsx` — business default pricing components
-- `src/services/bookings.ts` — the pricing snapshot on confirmation
-- `e2e/journey-9.spec.ts` — steps 9.1.1 through 9.1.7
-
-**Journey steps enabled:** 9.1.1, 9.1.2, 9.1.3, 9.1.4, 9.1.5, 9.1.6, 9.1.7.
-
-**Acceptance criteria:**
-- [x] Line items come from `priceBooking` in `src/core/pricing.ts` — no second pricing implementation exists
-- [x] A confirmed booking shows the **snapshotted** components with computed day and visit counts (step 9.1.1)
-- [x] **Raising the business default rate does not change a confirmed booking's total** (step 9.1.6) — this is what the snapshot is for
-- [x] Overriding the day count downward recalculates the total **without changing the dates** (step 9.1.2)
-- [x] An ad-hoc item with a positive amount raises the total; one with a negative amount lowers it (steps 9.1.3, 9.1.4)
-- [x] "Copy summary" places a plain-text itemized summary on the clipboard (step 9.1.5)
-- [x] Marking paid with a method note produces a status reading `Closed` once the range is past (step 9.1.7)
-- [x] Every displayed amount is formatted from integer cents at the point of display; **no currency value is held as a float anywhere**
-- [x] A count override writes its Reference data system entry, attributed
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not reimplement pricing arithmetic; `src/core/pricing.ts` is the only engine
-- Does not store a computed total as a column; the snapshot is of the **components**, not the answer
-- Does not perform arithmetic on a dollar value; formatting happens only at display
-- Does not build an invoice, a payment flow, or a receipt
+**Output:** the pricing section, count overrides, ad-hoc items, `/settings` defaults, and the confirmation snapshot.
+**Key decisions:** The snapshot copies **components, not a total** — storing a total would satisfy 9.1.6 and break recalculation when a visit is added. Dollars are parsed from the string, never by multiplying a float. `summaryText` lives in the service so it is testable without a browser. **A confirmation assertion turned flaky** once confirming also generated visits and snapshotted pricing: a slow write and a wrong write look identical in a test report.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
-### Task 2.7 — Activity log
+### Task 2.7 — Activity log ✓
 
-> **Status:** `[x]` Complete
-> **Session:** 2026-08-19 — see `SESSION_LOG.md`
-> **Depends on:** Task 2.6
-
-**What this task implements:**
-The activity log — manual out-of-band entries and the automatic system entries every earlier task has been writing. Last because it is where their attribution is verified in one place.
-
-**Files to create or modify:**
-- `src/app/(admin)/bookings/[id]/page.tsx` — the activity section
-- `src/app/(admin)/actions/activity.ts` — `addActivityEntry`
-- `src/app/(admin)/customers/page.tsx`, `customers/[id]/page.tsx` — customer screens with their activity
-- `src/services/bookings.ts` — confirm every transition writes its entry
-- `e2e/journey-1.spec.ts` — step 1.2.6
-
-**Journey steps enabled:** 1.2.6.
-
-**Acceptance criteria:**
-- [x] A manual entry records a note, a source from the Reference data list, and a date (step 1.2.6)
-- [x] Source labels render exactly as the Reference data table gives them
-- [x] An entry dated in the past sorts by its **entry date**, not its creation time
-- [x] System entries are marked `is_system` true and are visually distinguishable from typed ones
-- [x] **Every system entry in the Reference data table has a test asserting its exact text**, for a transition that produces it
-- [x] Every entry, manual or system, records `actor_id`
-- [x] **A full audit: every state-changing action in `src/app/(admin)/actions/` records the acting admin.** Enumerate them and assert it, rather than sampling
-- [x] The customer detail screen shows that customer's activity, and no other customer's
-- [x] **Activity entries appear on no customer-facing surface** — there is none in this phase, and `src/db/repositories/activity.ts` still has no customer-facing read
-- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [x] `docs/user-journeys.md` coverage table updated
-- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
-
-**Must not do:**
-- Does not add a customer-facing read to `src/db/repositories/activity.ts`
-- Does not let a system entry be edited or deleted by a human
-- Does not build the customer portal — Phase 3
+**Output:** manual entries, customer detail screens, and `src/services/attribution.test.ts`.
+**Key decisions:** The attribution audit **enumerates every exported action** across all seven modules rather than sampling, with a documented allowlist for the two reads. A second test produces all eleven Reference data system entries in one booking's lifetime and asserts each exact string. `entryDate` is when something happened, not when it was typed. **A flaky test was pointing at real waste:** `regenerateVisitsForBooking` repeated three round trips `planRegeneration` had already made.
+**Session:** 2026-08-19 — `logs/phase-2.md`
 
 ---
 
@@ -424,8 +188,8 @@ The activity log — manual out-of-band entries and the automatic system entries
 - [x] All tasks above marked `[x]`
 - [x] `pnpm test:unit` (220), `pnpm test:integration` (190), `pnpm test:e2e` (77) all pass with zero failures
 - [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] **Review gate, by hand — TIME THE CAPTURE FLOW ON A REAL PHONE against the thirty second target.** `docs/META-PLAN.md` §6 calls this the single most important measurement in the project. A miss is a product finding, not a performance bug: do not optimize the round trip and call it fixed. The likely cause is too many fields or too many taps, and the fix belongs in `docs/spec.md` §5.1 first
-- [ ] **Review gate, by hand — EVALUATE THE `docs/spec.md` §10 OPEN QUESTION** about the isolated availability-check submission. There is live use now. Does an admin have to submit twice for a single mental action? Would relaxing it make availability checking feel incidental? **Record the decision in the spec rather than leaving it open**
+- [ ] **Review gate, by hand — TIME THE CAPTURE FLOW ON A REAL PHONE against the thirty second target.** **STILL OUTSTANDING.** `docs/META-PLAN.md` §6 calls this the single most important measurement in the project. A miss is a product finding, not a performance bug: do not optimize the round trip and call it fixed. The likely cause is too many fields or too many taps, and the fix belongs in `docs/spec.md` §5.1 first
+- [x] **Review gate — the `docs/spec.md` §10 open question was EVALUATED AND SETTLED on 2026-08-20: the rule stands as written.** Recorded in `docs/spec.md` §10, and the "Under review" note in §5.5 replaced.
 - [x] **Review gate:** route handlers and server actions are thin — `src/services/attribution.test.ts` asserts no action file imports `drizzle-orm` or calls `db()`.
 - [x] **Review gate:** every surface reads status from `deriveStatus` — grepped; no status literal appears in any `.tsx` outside a `data-status` attribute.
 - [x] **Review gate:** the acting admin is recorded on every state change — `src/services/attribution.test.ts` enumerates every exported action across all seven modules and asserts each calls `actingAdmin()`, with a documented allowlist for the two reads.
@@ -433,7 +197,7 @@ The activity log — manual out-of-band entries and the automatic system entries
 - [x] `docs/plan-summary.md` status line updated for Phase 2
 - [x] `docs/user-journeys.md` reviewed, coverage table updated
 - [x] Phase retrospective written to `docs/phase-2-retro.md`
-- [ ] Housekeeping session run
+- [x] Housekeeping session run — 2026-08-20
 - [ ] `tasks/phase-3.md` generated, reviewed, and committed
 
 ---
