@@ -64,8 +64,12 @@ test('8.1.3 — following the link creates a session and loads home', async ({ p
   await page.goto(link.url)
 
   await expect(page).toHaveURL(/\/home$/)
-  await expect(page.getByTestId('admin-name')).toHaveText(SEEDED_ADMIN_NAME)
-  await expect(page.getByTestId('admin-email')).toHaveText(SEEDED_ADMIN_EMAIL)
+  // The Phase 1 stub rendered the name in the page body; Task 2.1 replaced
+  // that page with the real home screen and the name moved to the shell.
+  // What 8.1.3 asserts is unchanged: the session resolves to THIS admin,
+  // read from the database rather than from the cookie.
+  await expect(page.getByTestId('acting-admin')).toHaveText(SEEDED_ADMIN_NAME)
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
 })
 
 test('8.1.4 — the same link a second time no longer works', async ({ page }) => {
@@ -92,7 +96,7 @@ test('8.1.6 — the session survives a new browser context on the same device', 
   // A fresh page carrying the same cookie jar, as returning days later would.
   const returning = await context.newPage()
   await returning.goto('/home')
-  await expect(returning.getByTestId('admin-name')).toHaveText(SEEDED_ADMIN_NAME)
+  await expect(returning.getByTestId('acting-admin')).toHaveText(SEEDED_ADMIN_NAME)
   await returning.close()
 })
 

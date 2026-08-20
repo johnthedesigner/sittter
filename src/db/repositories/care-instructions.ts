@@ -6,7 +6,7 @@
  * instruction shadows the property's for that engagement.
  */
 
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '../client'
 import { careInstructions } from '../schema'
@@ -52,4 +52,22 @@ export async function deleteCareInstruction(businessId: string, id: string): Pro
     .where(and(eq(careInstructions.businessId, businessId), eq(careInstructions.id, id)))
     .returning({ id: careInstructions.id })
   return rows.length > 0
+}
+
+/** Instructions for several properties at once. */
+export async function listCareInstructionsForProperties(
+  businessId: string,
+  propertyIds: string[]
+): Promise<CareInstructionRow[]> {
+  if (propertyIds.length === 0) return []
+  return db()
+    .select()
+    .from(careInstructions)
+    .where(
+      and(
+        eq(careInstructions.businessId, businessId),
+        inArray(careInstructions.propertyId, propertyIds)
+      )
+    )
+    .orderBy(careInstructions.sortOrder)
 }

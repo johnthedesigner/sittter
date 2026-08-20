@@ -163,6 +163,15 @@ export default [
     },
   },
 
+  // Playwright specs run in Node, but the callbacks passed to page.evaluate
+  // are serialized and run in the BROWSER, so they legitimately reference
+  // document and window. Without this, `document is not defined` is reported
+  // against code that never executes in Node.
+  {
+    files: ['e2e/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+
   // Spike scripts are throwaway and run outside the build. They are allowed
   // console output and are not part of the typed source tree.
   {

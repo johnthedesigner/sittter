@@ -2,7 +2,7 @@
  * Visit log repository. One log per visit, enforced by a unique constraint.
  */
 
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '../client'
 import { visitLogs } from '../schema'
@@ -39,4 +39,16 @@ export async function updateVisitLog(
     .where(and(eq(visitLogs.businessId, businessId), eq(visitLogs.id, visitLogId)))
     .returning()
   return row ?? null
+}
+
+/** Logs for several visits at once. */
+export async function listVisitLogsForVisits(
+  businessId: string,
+  visitIds: string[]
+): Promise<VisitLog[]> {
+  if (visitIds.length === 0) return []
+  return db()
+    .select()
+    .from(visitLogs)
+    .where(and(eq(visitLogs.businessId, businessId), inArray(visitLogs.visitId, visitIds)))
 }

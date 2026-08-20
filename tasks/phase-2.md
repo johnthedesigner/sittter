@@ -127,8 +127,8 @@ Measured **on a real phone, by hand, with a stopwatch**, at the phase review gat
 
 ### Task 2.1 — Admin shell, home, and the booking list
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** none
 
 **What this task implements:**
@@ -145,19 +145,19 @@ The navigation shell every admin screen sits in, the home screen, and the bookin
 **Journey steps enabled:** 1.1.1, 1.3.2.
 
 **Acceptance criteria:**
-- [ ] The booking list shows, per booking: customer name, property nickname, service range, status, and **both confirmation flags as separate columns**
-- [ ] An admin can tell from the list alone which of the two flags is missing, without opening the booking (spec §5.5)
-- [ ] Status is read from `deriveStatus` — `grep` finds no second status computation anywhere in `src/app/`
-- [ ] Status labels match the Reference data table exactly
-- [ ] The list is filterable by status, and the filter survives a page reload
-- [ ] `/home` shows today's visits and a needs-attention list
-- [ ] `/home` renders correctly against the seeded database, whose three bookings are `confirmed`, `tentative`, and `inquiry`
-- [ ] Every screen is usable one-handed on a 390px-wide viewport with no horizontal scrolling
-- [ ] A "New booking" action is reachable from the home screen without scrolling
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] The booking list shows, per booking: customer name, property nickname, service range, status, and **both confirmation flags as separate columns**
+- [x] An admin can tell from the list alone which of the two flags is missing, without opening the booking (spec §5.5)
+- [x] Status is read from `deriveStatus` — `grep` finds no second status computation anywhere in `src/app/`
+- [x] Status labels match the Reference data table exactly
+- [x] The list is filterable by status, and the filter survives a page reload
+- [x] `/home` shows today's visits and a needs-attention list
+- [x] `/home` renders correctly against the seeded database, whose three bookings are `confirmed`, `tentative`, and `inquiry`
+- [x] Every screen is usable one-handed on a 390px-wide viewport with no horizontal scrolling
+- [x] A "New booking" action is reachable from the home screen without scrolling
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not build the capture form — that is Task 2.2

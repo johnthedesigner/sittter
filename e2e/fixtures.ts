@@ -100,4 +100,24 @@ export const test = base.extend({
   },
 })
 
+/** Sign in through the real callback route, as the emailed link would. */
+export async function signIn(page: import('@playwright/test').Page): Promise<void> {
+  const link = await mintSignInLink(SEEDED_ADMIN_EMAIL)
+  await page.goto(link.url)
+  await page.waitForURL(/\/home$/)
+}
+
+/**
+ * A test that starts signed in against a freshly seeded database.
+ *
+ * Most admin-surface specs need this; the sign-in journey itself does not,
+ * and uses `test` instead.
+ */
+export const signedInTest = test.extend({
+  page: async ({ page }, use) => {
+    await signIn(page)
+    await use(page)
+  },
+})
+
 export { expect } from '@playwright/test'

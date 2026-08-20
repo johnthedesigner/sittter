@@ -69,3 +69,25 @@ export async function deleteVisits(businessId: string, visitIds: string[]): Prom
     .returning({ id: visits.id })
   return rows.length
 }
+
+/** Visits for several bookings at once, so a screen needs one query not N. */
+export async function listVisitsForBookings(
+  businessId: string,
+  bookingIds: string[]
+): Promise<Visit[]> {
+  if (bookingIds.length === 0) return []
+  return db()
+    .select()
+    .from(visits)
+    .where(and(eq(visits.businessId, businessId), inArray(visits.bookingId, bookingIds)))
+    .orderBy(visits.visitDate)
+}
+
+/** Every visit falling on one date, across all bookings. */
+export async function listVisitsOnDate(businessId: string, date: string): Promise<Visit[]> {
+  return db()
+    .select()
+    .from(visits)
+    .where(and(eq(visits.businessId, businessId), eq(visits.visitDate, date)))
+    .orderBy(visits.visitDate)
+}
