@@ -110,8 +110,8 @@ From `docs/spec.md` §5.10, verbatim, because this is the list the phase gate ch
 
 ### Task 3.1 — Link storage, resolution, and rate limiting
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-20 — see `SESSION_LOG.md`
 > **Depends on:** none
 
 **What this task implements:**
@@ -126,21 +126,21 @@ From `docs/spec.md` §5.10, verbatim, because this is the list the phase gate ch
 **Journey steps enabled:** none — no user-facing surface.
 
 **Acceptance criteria:**
-- [ ] `allocateSlug` uses `generateSlug` from `src/core/slug.ts` and no second generator exists
-- [ ] Allocation retries on a database collision, not merely on reserved and blocked words, and a test forces a collision by seeding an existing slug
-- [ ] Allocation takes a random source as an argument, so a collision is a deterministic test rather than a hope
-- [ ] Slugs are stored uppercase and resolve case-insensitively, asserted through the service
-- [ ] `resolveSlug` returns the SAME result for a slug that never existed, an expired one, and a revoked one — a test asserts the three are indistinguishable
-- [ ] A `booking_form` link stops resolving once its booking derives anything but `inquiry` or `tentative`
-- [ ] `rotateCustomerLink` revokes the old slug and issues a new one; the old one then resolves like any dead link
-- [ ] `ensurePublicIntakeLink` is idempotent — exactly one `public_intake` link per business, however many times it is called
-- [ ] A successful resolution increments `hit_count` and sets `last_hit_at`
-- [ ] The rate limit engages at `LINK_RATE_LIMIT_PER_MINUTE` and releases in the next window, both tested with an injected instant rather than by waiting
-- [ ] Rate limiting is keyed per IP, and a test proves one IP hitting the limit does not affect another
-- [ ] No Drizzle call exists outside `src/db/` — grep
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] `allocateSlug` uses `generateSlug` from `src/core/slug.ts` and no second generator exists
+- [x] Allocation retries on a database collision, not merely on reserved and blocked words, and a test forces a collision by seeding an existing slug
+- [x] Allocation takes a random source as an argument, so a collision is a deterministic test rather than a hope
+- [x] Slugs are stored uppercase and resolve case-insensitively, asserted through the service
+- [x] `resolveSlug` returns the SAME result for a slug that never existed, an expired one, and a revoked one — a test asserts the three are indistinguishable
+- [x] A `booking_form` link stops resolving once its booking derives anything but `inquiry` or `tentative`
+- [x] `rotateCustomerLink` revokes the old slug and issues a new one; the old one then resolves like any dead link
+- [x] `ensurePublicIntakeLink` is idempotent — exactly one `public_intake` link per business, however many times it is called
+- [x] A successful resolution increments `hit_count` and sets `last_hit_at`
+- [x] The rate limit engages at `LINK_RATE_LIMIT_PER_MINUTE` and releases in the next window, both tested with an injected instant rather than by waiting
+- [x] Rate limiting is keyed per IP, and a test proves one IP hitting the limit does not affect another
+- [x] No Drizzle call exists outside `src/db/` — grep
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not put a signed payload, an encoded identifier, or a JWT in a URL; a slug is an opaque lookup key and revocation is a requirement

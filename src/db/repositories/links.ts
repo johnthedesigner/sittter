@@ -18,6 +18,8 @@
 
 import { and, eq, sql } from 'drizzle-orm'
 
+import { normalizeSlug } from '@/core/slug'
+
 import { db } from '../client'
 import { links } from '../schema'
 
@@ -25,9 +27,20 @@ export type Link = typeof links.$inferSelect
 export type NewLink = typeof links.$inferInsert
 
 export async function createLink(businessId: string, input: Omit<NewLink, 'businessId'>) {
+  // A slug outside the alphabet can never be resolved — `normalizeSlug`
+  // rejects it — so writing one creates a row that is dead on arrival and
+  // silent about it. The database cannot express this constraint, so it is
+  // enforced here rather than left to every caller to remember.
+  const slug = normalizeSlug(input.slug)
+  if (slug === null) {
+    throw new Error(
+      `Not a valid slug: ${JSON.stringify(input.slug)}. Five characters from ${'0123456789ABCDEFGHJKMNPQRSTVWXYZ'}.`
+    )
+  }
+
   const [row] = await db()
     .insert(links)
-    .values({ ...input, businessId, slug: input.slug.toUpperCase() })
+    .values({ ...input, businessId, slug })
     .returning()
   if (!row) throw new Error('createLink inserted no row')
   return row

@@ -11,7 +11,9 @@ const testEnv = loadEnv({ path: '.env.test' }).parsed ?? {}
 
 export default defineConfig({
   test: {
-    include: ['src/{db,services}/**/*.test.ts'],
+    // src/lib/ joined the integration glob when rate limiting arrived: it is
+    // database-backed, so its tests need a real database like the others.
+    include: ['src/{db,services,lib}/**/*.test.ts'],
     environment: 'node',
     env: testEnv,
     // Repositories share one database; parallel files would race on fixtures.
