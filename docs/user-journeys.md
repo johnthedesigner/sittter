@@ -276,6 +276,13 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 4.3.2 | `e2e/journey-4.spec.ts` | deleting an upcoming visit with no log needs no confirmation | 2 |
 | 4.3.3 | `src/services/visits.test.ts` | refuses to delete a logged visit without a confirmation | 2 |
 | 4.3.4 | `e2e/journey-4.spec.ts` | regenerating preserves visits and is explicit, never automatic | 2 |
+| 9.1.1 | `e2e/journey-9.spec.ts` | a confirmed booking shows its components with computed counts | 2 |
+| 9.1.2 | `e2e/journey-9.spec.ts` | overriding the day count recalculates without changing the dates | 2 |
+| 9.1.3 | `e2e/journey-9.spec.ts` | a positive ad-hoc item raises the total | 2 |
+| 9.1.4 | `e2e/journey-9.spec.ts` | a negative ad-hoc item lowers the total | 2 |
+| 9.1.5 | `e2e/journey-9.spec.ts` | copy summary puts plain text on the clipboard | 2 |
+| 9.1.6 | `e2e/journey-9.spec.ts` | raising the business default does not change a confirmed total | 2 |
+| 9.1.7 | `e2e/journey-9.spec.ts` | marking paid on a finished booking reads Closed | 2 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |
 | 8.1.3 | `e2e/journey-8.spec.ts` | following the link creates a session and loads home | 1 |

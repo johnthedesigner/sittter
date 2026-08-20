@@ -15,6 +15,7 @@ import {
 } from '@/services/bookings'
 
 import { generateVisitsOnConfirmation } from '@/services/visits'
+import { snapshotPricing } from '@/services/pricing'
 
 import { actingAdmin } from './bookings'
 
@@ -46,6 +47,7 @@ export async function toggleDatesFirm(formData: FormData): Promise<void> {
   // Either flag can be the one that completes confirmation, so generation
   // keys off the resulting derived status rather than off which was toggled.
   await generateVisitsOnConfirmation(businessId, admin.id, admin.name, bookingId, today)
+  await snapshotPricingOnConfirmation(businessId, bookingId, now, today)
 
   revalidatePath(`/bookings/${bookingId}`)
 }
@@ -78,8 +80,34 @@ export async function toggleAvailabilityChecked(formData: FormData): Promise<voi
   )
 
   await generateVisitsOnConfirmation(businessId, admin.id, admin.name, bookingId, today)
+  await snapshotPricingOnConfirmation(businessId, bookingId, now, today)
 
   revalidatePath(`/bookings/${bookingId}`)
+}
+
+/**
+ * Freeze the pricing components once a booking is confirmed.
+ *
+ * Beside visit generation, and for the same reason: either flag can be the
+ * one that completes confirmation, so this asks the derived status rather
+ * than assuming which action ran.
+ */
+async function snapshotPricingOnConfirmation(
+  businessId: string,
+  bookingId: string,
+  now: Date,
+  today: CalendarDate
+): Promise<void> {
+  const { getBooking } = await import('@/db/repositories/bookings')
+  const { deriveStatus } = await import('@/core/status')
+  const { toBookingCore } = await import('@/services/home')
+
+  const booking = await getBooking(businessId, bookingId)
+  if (booking === null) return
+  const status = deriveStatus(toBookingCore(booking), today)
+  if (status !== 'confirmed' && status !== 'in_progress') return
+
+  await snapshotPricing(businessId, bookingId, now)
 }
 
 export async function declineBookingAction(formData: FormData): Promise<void> {

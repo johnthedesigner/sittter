@@ -340,8 +340,8 @@ Visit generation on confirmation, the visit list, and individual visit editing �
 
 ### Task 2.6 — Pricing
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.5
 
 **What this task implements:**
@@ -357,19 +357,19 @@ The pricing section, reading `src/core/pricing.ts`, with component overrides, ad
 **Journey steps enabled:** 9.1.1, 9.1.2, 9.1.3, 9.1.4, 9.1.5, 9.1.6, 9.1.7.
 
 **Acceptance criteria:**
-- [ ] Line items come from `priceBooking` in `src/core/pricing.ts` — no second pricing implementation exists
-- [ ] A confirmed booking shows the **snapshotted** components with computed day and visit counts (step 9.1.1)
-- [ ] **Raising the business default rate does not change a confirmed booking's total** (step 9.1.6) — this is what the snapshot is for
-- [ ] Overriding the day count downward recalculates the total **without changing the dates** (step 9.1.2)
-- [ ] An ad-hoc item with a positive amount raises the total; one with a negative amount lowers it (steps 9.1.3, 9.1.4)
-- [ ] "Copy summary" places a plain-text itemized summary on the clipboard (step 9.1.5)
-- [ ] Marking paid with a method note produces a status reading `Closed` once the range is past (step 9.1.7)
-- [ ] Every displayed amount is formatted from integer cents at the point of display; **no currency value is held as a float anywhere**
-- [ ] A count override writes its Reference data system entry, attributed
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] Line items come from `priceBooking` in `src/core/pricing.ts` — no second pricing implementation exists
+- [x] A confirmed booking shows the **snapshotted** components with computed day and visit counts (step 9.1.1)
+- [x] **Raising the business default rate does not change a confirmed booking's total** (step 9.1.6) — this is what the snapshot is for
+- [x] Overriding the day count downward recalculates the total **without changing the dates** (step 9.1.2)
+- [x] An ad-hoc item with a positive amount raises the total; one with a negative amount lowers it (steps 9.1.3, 9.1.4)
+- [x] "Copy summary" places a plain-text itemized summary on the clipboard (step 9.1.5)
+- [x] Marking paid with a method note produces a status reading `Closed` once the range is past (step 9.1.7)
+- [x] Every displayed amount is formatted from integer cents at the point of display; **no currency value is held as a float anywhere**
+- [x] A count override writes its Reference data system entry, attributed
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not reimplement pricing arithmetic; `src/core/pricing.ts` is the only engine

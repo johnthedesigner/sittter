@@ -67,3 +67,32 @@ export async function listAdhocLineItems(businessId: string, bookingId: string) 
     .where(and(eq(adhocLineItems.businessId, businessId), eq(adhocLineItems.bookingId, bookingId)))
     .orderBy(adhocLineItems.sortOrder)
 }
+
+export async function updatePricingComponent(
+  businessId: string,
+  id: string,
+  patch: Partial<Omit<NewPricingComponent, 'businessId' | 'id'>>
+): Promise<PricingComponentRow | null> {
+  const [row] = await db()
+    .update(pricingComponents)
+    .set(patch)
+    .where(and(eq(pricingComponents.businessId, businessId), eq(pricingComponents.id, id)))
+    .returning()
+  return row ?? null
+}
+
+export async function deletePricingComponent(businessId: string, id: string): Promise<boolean> {
+  const rows = await db()
+    .delete(pricingComponents)
+    .where(and(eq(pricingComponents.businessId, businessId), eq(pricingComponents.id, id)))
+    .returning({ id: pricingComponents.id })
+  return rows.length > 0
+}
+
+export async function deleteAdhocLineItem(businessId: string, id: string): Promise<boolean> {
+  const rows = await db()
+    .delete(adhocLineItems)
+    .where(and(eq(adhocLineItems.businessId, businessId), eq(adhocLineItems.id, id)))
+    .returning({ id: adhocLineItems.id })
+  return rows.length > 0
+}

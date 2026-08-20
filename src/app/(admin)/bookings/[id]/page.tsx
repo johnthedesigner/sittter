@@ -27,6 +27,10 @@ import type { SkippedView, VisitView } from '@/components/VisitsSection'
 import { listVisitTaskIds, listVisitsForBooking } from '@/db/repositories/visits'
 import { listVisitLogsForVisits } from '@/db/repositories/visit-logs'
 import { planRegeneration } from '@/services/visits'
+import { PricingSection } from '@/components/PricingSection'
+import type { PricingView } from '@/components/PricingSection'
+import { priceBookingById, summaryText } from '@/services/pricing'
+import { listAdhocLineItems } from '@/db/repositories/pricing'
 import { getProperty } from '@/db/repositories/properties'
 import { env } from '@/lib/env'
 
@@ -77,6 +81,23 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       hasLog: loggedVisitIds.has(v.id),
     }))
   )
+
+  const priced = await priceBookingById(businessId, id)
+  const adhocRows = await listAdhocLineItems(businessId, id)
+  const pricing: PricingView | null =
+    priced === null
+      ? null
+      : {
+          lineItems: priced.lineItems,
+          totalCents: priced.totalCents,
+          dayCount: priced.dayCount,
+          visitCount: priced.visitCount,
+          dayCountWasOverridden: priced.dayCountWasOverridden,
+          visitCountWasOverridden: priced.visitCountWasOverridden,
+          isSnapshot: priced.isSnapshot,
+          adhocIds: Object.fromEntries(adhocRows.map((a) => [a.label, a.id])),
+          summary: summaryText(summary.customerName, summary.propertyNickname, priced),
+        }
 
   // Surfaces the reason src/core/schedule.ts already gives, rather than
   // writing a second explanation of why a cadence produced nothing.
@@ -207,6 +228,15 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           skipped={skipped}
           canGenerate={hasDates}
         />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Pricing</h2>
+        {pricing === null ? (
+          <p className="mt-2 text-sm text-stone-600">Nothing to price yet.</p>
+        ) : (
+          <PricingSection bookingId={booking.id} pricing={pricing} />
+        )}
       </section>
 
       <section className="mt-8">

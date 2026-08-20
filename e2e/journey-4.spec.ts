@@ -14,8 +14,11 @@ async function confirmedBookingWithVisits(page: import('@playwright/test').Page)
   await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
 
   await page.getByTestId('toggle-availability').click()
-  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
-  await expect(page.getByTestId('visit').first()).toBeVisible()
+  // Confirming also generates visits and snapshots pricing; wait for the
+  // write to land rather than racing it.
+  await expect(page.getByTestId('availability-attribution')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed', { timeout: 15_000 })
+  await expect(page.getByTestId('visit').first()).toBeVisible({ timeout: 15_000 })
 
   return page.url()
 }

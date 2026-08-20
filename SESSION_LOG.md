@@ -2,28 +2,25 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 5 of 7 tasks complete
-**Next task:** 2.6 — Pricing
+**Phase:** 2 — Admin surface — In progress, 6 of 7 tasks complete
+**Next task:** 2.7 — Activity log — **the last task in Phase 2**
 
-**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, visits, property details, payment, terminal actions, and a read-only activity list.
+**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/settings`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, visits, pricing, property details, payment, terminal actions, and a read-only activity list.
 
-**Tests:** 220 unit, 168 integration, 62 end-to-end.
+**Tests:** 220 unit, 185 integration, 71 end-to-end.
 
-**What Task 2.6 must know:**
-- **The pricing snapshot is taken on transition to `Confirmed`,** alongside visit generation. `generateVisitsOnConfirmation` in `src/services/visits.ts` is the model: it keys off the RESULTING derived status rather than off which flag was toggled, because either confirmation action can complete it, and it no-ops when a schedule already exists so a flag toggled off and on does not rebuild something edited by hand.
-- Both confirmation actions in `src/app/(admin)/actions/confirmation.ts` already call that hook; the pricing snapshot goes beside it.
-- `priceBooking` in `src/core/pricing.ts` is the only engine. `listDefaultPricingComponents` and `listPricingComponentsForBooking` already exist, and a component with a null `bookingId` is a business default while one carrying a `bookingId` is a snapshot.
-- `formatCents` in `src/components/format.ts` formats integer cents with integer arithmetic. **9.1.6 is the criterion that matters most:** raising the business default must not change a confirmed booking's total, which is what the snapshot is for.
-
-**A schema fact worth knowing:** `visits` has no `created_by` column in `docs/dev-plan.md` §5, unlike `bookings`, `visit_logs`, and `photos`. Visit writes are attributed through the activity log rather than on the row. Adding a column would be a schema change the plan does not call for — recorded rather than done.
+**What Task 2.7 must do:**
+- **Manual activity entries**, with a source from the Reference data list and a date, sorting by **entry date** rather than creation time.
+- **Customer detail screens** at `/customers/[id]`, showing that customer's activity and no other's.
+- **A full audit**: every state-changing action in `src/app/(admin)/actions/` records the acting admin. Enumerate them and assert it rather than sampling. The actions are in `auth.ts`, `bookings.ts`, `care-instructions.ts`, `confirmation.ts`, `visits.ts`, `pricing.ts`.
+- **Every system entry in the Reference data table needs a test asserting its exact text.** Most already have one in the service tests; the audit is to confirm none is missing.
+- `TRANSITION_ENTRIES` in `src/services/bookings.ts` holds the transition text. The capture, date-change, regeneration, and count-override entries are written at their own call sites.
 
 **A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged.
 
-**The §10 open question is live and evaluable.** See the Task 2.4 entry in `logs/` or the observation recorded there.
+**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`. The full e2e suite takes about five minutes.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright runs a production build on **:3100** with `workers: 1`.
-
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **`docs/spec.md` §10 evaluation** — both performable now.
+**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **`docs/spec.md` §10 evaluation**. Both performable now.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
@@ -32,6 +29,51 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.6: Pricing
+
+**What was done:**
+- `src/services/pricing.ts` — `snapshotPricing`, `priceBookingById`, `overrideCounts`, component and ad-hoc management, `summaryText`
+- `src/app/(admin)/actions/pricing.ts`, `src/components/PricingSection.tsx`, `DefaultPricing.tsx`, `pricing-state.ts`
+- `src/app/(admin)/settings/page.tsx`
+- `src/services/pricing.test.ts` — 17 tests; `e2e/journey-9.spec.ts` — 9 specs
+
+**The decision the whole task turns on: the snapshot copies COMPONENTS, not a total.**
+
+Journey step 9.1.6 requires that raising the business rate later leaves a confirmed booking's price alone. Storing a total would satisfy that and break something else — a booking whose visit count changes must still recalculate. Freezing the inputs satisfies both, and there is a test for each: raising the default leaves the total at 5900, while adding a visit to the same booking moves it to 6500.
+
+There is no total column in the schema, and a test asserts the booking row has no `total` property at all.
+
+**Decisions made:**
+
+- **Dollars typed by a person are parsed from the STRING, never by multiplying a float.** `19.99 * 100` is `1998.9999999999998`, and rounding that is a coin flip on some values. AGENTS.md forbids floating point touching a currency value, and the input boundary is where that rule is easiest to break without noticing.
+- **`summaryText` lives in the service, not the component.** The exact text is then testable without a browser, and the clipboard and any future email share one definition.
+- **An unconfirmed booking prices against the current defaults; a confirmed one against its snapshot.** Someone looking at a tentative booking should see what it would cost today.
+- **`snapshotPricing` is idempotent** and is called from both confirmation actions, keyed off the resulting derived status — the same shape as visit generation, for the same reason.
+
+**Two test problems, neither a code defect:**
+
+1. **A Playwright `hasText` filter matched nothing** because the text it looked for lived in an input's `value`, which contributes no text content. Selected by the `data-type` attribute instead.
+2. **A confirmation assertion became flaky.** Confirming now generates visits *and* snapshots pricing, so the round trip outgrew the default five-second assertion timeout and intermittently read "Tentative". Fixed by waiting for the attribution line — proof the write landed — before asserting the derived status, in all three journeys that confirm a booking. Worth recording because a slow write and a wrong write look identical in a test report.
+
+**Not done:**
+- **No invoice, payment flow, or receipt** — marking paid records a date and a note, nothing more.
+- **No stored total**, anywhere.
+- **The manual activity entry and the attribution audit** — Task 2.7.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 185 tests |
+| `pnpm test:e2e` | PASS — 71 tests |
+| `pnpm build` / `typecheck` / `lint` / `prettier` | PASS |
+| Second pricing engine | none — `src/core/pricing.ts` only |
+| Float arithmetic on a cents value | none |
+| Stored total column | none |
+
+---
 
 ## 2026-08-19 — Task 2.5: Visits — generation and editing
 

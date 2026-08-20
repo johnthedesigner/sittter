@@ -494,11 +494,12 @@ test("1.3.3, 1.3.4, 1.3.5 — the second admin sees the first's work and complet
   // 1.3.4 — the second admin toggles the flag the first did not.
   await page.getByTestId('toggle-availability').click()
   await expect(page.getByTestId('availability-attribution')).toContainText(
-    `by ${SECOND_ADMIN_NAME.split(' ')[0]}`
+    `by ${SECOND_ADMIN_NAME.split(' ')[0]}`,
+    { timeout: 15_000 }
   )
 
   // 1.3.5 — the status now reads Confirmed.
-  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
+  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed', { timeout: 15_000 })
 })
 
 test('any admin may clear a flag the other set — there is no role restriction', async ({
