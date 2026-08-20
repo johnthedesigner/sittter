@@ -256,8 +256,8 @@ The booking detail screen's first three sections, and care instruction editing i
 
 ### Task 2.4 — The two confirmation actions
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.3
 
 **What this task implements:**
@@ -272,21 +272,21 @@ The two independent confirmation toggles, their attribution, and the transition 
 **Journey steps enabled:** 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5.
 
 **Acceptance criteria:**
-- [ ] Both toggles use the Reference data labels exactly, and neither mentions "status"
-- [ ] The two toggles are **visually and physically separated** on screen (spec §5.5)
-- [ ] **"Checked the family calendar" is its own submission.** Toggling it cannot be batched with any other change, and a test proves a combined save is not possible
-- [ ] Setting either flag records the acting admin and a timestamp; unsetting clears both and writes an activity entry
-- [ ] Each flag displays its actor and date once set, in the format `Checked by Kate, Aug 4`
-- [ ] **Any admin may set or unset either flag** — there is no role restriction, and a test has a second admin toggle the flag the first did not (steps 1.3.3, 1.3.4)
-- [ ] A booking derives `Confirmed` only when both flags are set **and** the range has both dates
-- [ ] Setting only one flag leaves the booking `Tentative`, and the list shows one set and one unset (step 1.3.2)
-- [ ] `declineBooking` and `cancelBooking` are terminal, and `deriveStatus` reports them ahead of everything else
-- [ ] `markPaid` records a paid date and method note, and a booking past its end date with a paid date derives `closed`
-- [ ] Every transition writes its Reference data system entry, attributed
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] Both toggles use the Reference data labels exactly, and neither mentions "status"
+- [x] The two toggles are **visually and physically separated** on screen (spec §5.5)
+- [x] **"Checked the family calendar" is its own submission.** Toggling it cannot be batched with any other change, and a test proves a combined save is not possible
+- [x] Setting either flag records the acting admin and a timestamp; unsetting clears both and writes an activity entry
+- [x] Each flag displays its actor and date once set, in the format `Checked by Kate, Aug 4`
+- [x] **Any admin may set or unset either flag** — there is no role restriction, and a test has a second admin toggle the flag the first did not (steps 1.3.3, 1.3.4)
+- [x] A booking derives `Confirmed` only when both flags are set **and** the range has both dates
+- [x] Setting only one flag leaves the booking `Tentative`, and the list shows one set and one unset (step 1.3.2)
+- [x] `declineBooking` and `cancelBooking` are terminal, and `deriveStatus` reports them ahead of everything else
+- [x] `markPaid` records a paid date and method note, and a booking past its end date with a paid date derives `closed`
+- [x] Every transition writes its Reference data system entry, attributed
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - **Does not relax the isolated-submission rule, and does not resolve the §10 open question.** Build it exactly as specified. If the friction is real, record the observation in `SESSION_LOG.md` and leave the behaviour alone — the human decides at the phase gate

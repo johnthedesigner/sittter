@@ -265,3 +265,184 @@ export async function updatePropertyDetails(
     accessCodes: blankToNull(input.accessCodes),
   })
 }
+
+// ── Confirmation, and the terminal transitions ───────────────────────
+
+/**
+ * The exact system entry text for each transition.
+ *
+ * Fixed in `tasks/phase-2.md` Reference data. Written here rather than at
+ * each call site so seven tasks cannot each invent their own phrasing.
+ */
+export const TRANSITION_ENTRIES = {
+  datesFirmSet: (admin: string) => `${admin} marked the customer's dates firm.`,
+  datesFirmCleared: (admin: string) => `${admin} cleared the dates-firm flag.`,
+  availabilitySet: (admin: string) => `${admin} checked the family calendar.`,
+  availabilityCleared: (admin: string) => `${admin} cleared the calendar check.`,
+  markedPaid: (admin: string) => `${admin} marked this booking paid.`,
+  declined: (admin: string) => `${admin} declined this booking.`,
+  cancelled: (admin: string) => `${admin} cancelled this booking.`,
+} as const
+
+async function recordTransition(
+  businessId: string,
+  bookingId: string,
+  actingAdminId: string,
+  note: string,
+  today: CalendarDate
+): Promise<void> {
+  await createActivityEntry(businessId, {
+    bookingId,
+    note,
+    source: 'app',
+    entryDate: today,
+    actorId: actingAdminId,
+    isSystem: true,
+  })
+}
+
+/**
+ * "Customer's dates are firm."
+ *
+ * Setting records the acting admin and an instant; unsetting clears BOTH,
+ * because a flag that remembers who set it after being cleared would attribute
+ * a state nobody is in.
+ */
+export async function setDatesFirm(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  value: boolean,
+  now: Date,
+  today: CalendarDate
+): Promise<void> {
+  const existing = await getBooking(businessId, bookingId)
+  if (existing === null) throw new CaptureError('That booking no longer exists.')
+  if ((existing.datesFirmAt !== null) === value) return
+
+  await updateBooking(businessId, bookingId, {
+    datesFirmAt: value ? now : null,
+    datesFirmBy: value ? actingAdminId : null,
+  })
+
+  await recordTransition(
+    businessId,
+    bookingId,
+    actingAdminId,
+    value
+      ? TRANSITION_ENTRIES.datesFirmSet(actingAdminName)
+      : TRANSITION_ENTRIES.datesFirmCleared(actingAdminName),
+    today
+  )
+}
+
+/**
+ * "Checked the family calendar."
+ *
+ * ITS OWN SUBMISSION, ALWAYS. `docs/spec.md` §5.5 requires that toggling this
+ * is never combined with another change into a single save. The signature is
+ * how that is enforced: this function takes a booking, a boolean, and nothing
+ * else, so there is no way to pass it a date change or an instruction edit to
+ * carry along.
+ *
+ * THAT RULE IS UNDER REVIEW — `docs/spec.md` §10. It encodes deliberateness
+ * as a hard constraint and may prove more friction than it is worth. It is
+ * built exactly as specified and is NOT to be relaxed during implementation.
+ * The human evaluates it against live use at the Phase 2 review gate.
+ */
+export async function setAvailabilityChecked(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  value: boolean,
+  now: Date,
+  today: CalendarDate
+): Promise<void> {
+  const existing = await getBooking(businessId, bookingId)
+  if (existing === null) throw new CaptureError('That booking no longer exists.')
+  if ((existing.availabilityCheckedAt !== null) === value) return
+
+  await updateBooking(businessId, bookingId, {
+    availabilityCheckedAt: value ? now : null,
+    availabilityCheckedBy: value ? actingAdminId : null,
+  })
+
+  await recordTransition(
+    businessId,
+    bookingId,
+    actingAdminId,
+    value
+      ? TRANSITION_ENTRIES.availabilitySet(actingAdminName)
+      : TRANSITION_ENTRIES.availabilityCleared(actingAdminName),
+    today
+  )
+}
+
+/** Decline. Terminal — `deriveStatus` reports it ahead of everything but cancellation. */
+export async function declineBooking(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  now: Date,
+  today: CalendarDate
+): Promise<void> {
+  await updateBooking(businessId, bookingId, { declinedAt: now, declinedBy: actingAdminId })
+  await recordTransition(
+    businessId,
+    bookingId,
+    actingAdminId,
+    TRANSITION_ENTRIES.declined(actingAdminName),
+    today
+  )
+}
+
+/** Cancel. Terminal, and outranks every other condition including decline. */
+export async function cancelBooking(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  now: Date,
+  today: CalendarDate
+): Promise<void> {
+  await updateBooking(businessId, bookingId, { cancelledAt: now, cancelledBy: actingAdminId })
+  await recordTransition(
+    businessId,
+    bookingId,
+    actingAdminId,
+    TRANSITION_ENTRIES.cancelled(actingAdminName),
+    today
+  )
+}
+
+/**
+ * Mark paid.
+ *
+ * `paidAt` is a CALENDAR DATE, not an instant — the day payment was received,
+ * which is what someone reconciling a bank statement is looking for.
+ */
+export async function markPaid(
+  businessId: string,
+  actingAdminId: string,
+  actingAdminName: string,
+  bookingId: string,
+  paidOn: CalendarDate,
+  methodNote: string | null,
+  today: CalendarDate
+): Promise<void> {
+  if (!isValidCalendarDate(paidOn)) throw new CaptureError('That is not a real date.')
+  await updateBooking(businessId, bookingId, {
+    paidAt: paidOn,
+    paidMethodNote: methodNote === null || methodNote.trim() === '' ? null : methodNote.trim(),
+  })
+  await recordTransition(
+    businessId,
+    bookingId,
+    actingAdminId,
+    TRANSITION_ENTRIES.markedPaid(actingAdminName),
+    today
+  )
+}

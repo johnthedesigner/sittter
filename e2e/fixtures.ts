@@ -32,6 +32,10 @@ export const SEED_REFERENCE_DATE = toCalendarDate('2026-08-17')
 export const SEEDED_ADMIN_EMAIL = 'jlivornese@gmail.com'
 export const SEEDED_ADMIN_NAME = 'Sitter'
 
+/** The second seeded admin. Spec §6.2: all admins have identical capabilities. */
+export const SECOND_ADMIN_EMAIL = 'co-admin+sittter@example.com'
+export const SECOND_ADMIN_NAME = 'Co-administrator'
+
 export const UNREGISTERED_EMAIL = 'not-an-admin@example.com'
 
 export interface SignInLink {
@@ -81,6 +85,14 @@ export async function mintExpiredSignInLink(email: string): Promise<SignInLink> 
   return { token, url: `/api/auth/callback?token=${encodeURIComponent(token)}` }
 }
 
+/** How many emails the app has sent. Used to assert that none was. */
+export async function countEmailSends(): Promise<number> {
+  const business = await getOnlyBusiness()
+  if (business === null) return 0
+  const { listEmailSends } = await import('../src/db/repositories/email-sends')
+  return (await listEmailSends(business.id)).length
+}
+
 export async function resetAndSeed(): Promise<void> {
   await resetDatabase()
   await seed(SEED_REFERENCE_DATE)
@@ -101,10 +113,22 @@ export const test = base.extend({
 })
 
 /** Sign in through the real callback route, as the emailed link would. */
-export async function signIn(page: import('@playwright/test').Page): Promise<void> {
-  const link = await mintSignInLink(SEEDED_ADMIN_EMAIL)
+export async function signIn(
+  page: import('@playwright/test').Page,
+  email: string = SEEDED_ADMIN_EMAIL
+): Promise<void> {
+  const link = await mintSignInLink(email)
   await page.goto(link.url)
   await page.waitForURL(/\/home$/)
+}
+
+/** Swap the signed-in admin, as the co-administrator picking up their phone. */
+export async function switchAdmin(
+  page: import('@playwright/test').Page,
+  email: string
+): Promise<void> {
+  await page.context().clearCookies()
+  await signIn(page, email)
 }
 
 /**

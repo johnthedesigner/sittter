@@ -2,12 +2,19 @@
  * Journey 1 — A neighbor asks in person, and the booking becomes confirmed.
  * Covers docs/user-journeys.md steps 1.1.1 and 1.3.2 so far.
  *
- * Later steps arrive with the tasks that build them: 1.3.1–1.3.5 in Task 2.4,
- * 1.3.6 in Task 2.5.
+ * Step 1.3.6 arrives with Task 2.5. Step 1.3.8 is Phase 3 — it expects a
+ * confirmation email carrying a portal link, and links do not exist yet.
  */
 
 import { ADMIN_STATUS_LABELS } from '../src/components/status'
-import { expect, signedInTest as test } from './fixtures'
+import {
+  SECOND_ADMIN_EMAIL,
+  SECOND_ADMIN_NAME,
+  SEEDED_ADMIN_NAME,
+  expect,
+  signedInTest as test,
+  switchAdmin,
+} from './fixtures'
 
 test('1.1.1 — the home screen shows today and a needs-attention list', async ({ page }) => {
   await page.goto('/home')
@@ -406,4 +413,156 @@ test('an instruction can be deleted', async ({ page }) => {
     .getByTestId('delete-instruction')
     .click()
   await expect(page.getByTestId('instruction').filter({ hasText: 'Temporary' })).toHaveCount(0)
+})
+
+// ── Confirmation, steps 1.3.1 through 1.3.5 ──────────────────────────
+
+/** The seeded tentative booking: dates firm set, calendar check missing. */
+async function openSeededTentative(page: import('@playwright/test').Page): Promise<string> {
+  await page.goto('/bookings?status=tentative')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+  return page.url()
+}
+
+test('1.3.1 — toggling "dates are firm" sets it and shows who and when', async ({ page }) => {
+  await page.goto('/bookings?status=inquiry')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  await page.getByTestId('toggle-dates-firm').click()
+
+  await expect(page.getByTestId('dates-firm-attribution')).toBeVisible()
+  await expect(page.getByTestId('dates-firm-attribution')).toContainText(`by ${SEEDED_ADMIN_NAME}`)
+})
+
+test('the two controls are separate forms with a visible separator', async ({ page }) => {
+  await openSeededTentative(page)
+
+  // Spec §5.5: visually and physically separated. Neither control can be
+  // submitted by the other's button because they are different forms.
+  await expect(page.getByTestId('dates-firm-form')).toBeVisible()
+  await expect(page.getByTestId('availability-form')).toBeVisible()
+  await expect(page.getByTestId('confirmation-separator')).toBeVisible()
+
+  const shared = await page
+    .getByTestId('availability-form')
+    .locator('[data-testid="toggle-dates-firm"]')
+    .count()
+  expect(shared).toBe(0)
+})
+
+test('the calendar check is its own submission and carries nothing else', async ({ page }) => {
+  await openSeededTentative(page)
+
+  // The form contains ONLY its booking id, its value, and its button. There is
+  // no field through which a date change or an instruction edit could ride
+  // along — spec §5.5's rule, made structural rather than merely discouraged.
+  const names = await page
+    .getByTestId('availability-form')
+    .locator('input, select, textarea')
+    .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('name')))
+
+  expect([...names].sort()).toEqual(['bookingId', 'value'])
+})
+
+test('1.3.2 — the list shows one flag set and one unset before confirming', async ({ page }) => {
+  await page.goto('/bookings?status=tentative')
+  const states = await page
+    .getByTestId('booking-row')
+    .first()
+    .getByTestId('flag-indicator')
+    .evaluateAll((nodes) =>
+      nodes.map((n) => `${n.getAttribute('data-flag')}=${n.getAttribute('data-set')}`)
+    )
+  expect(states).toEqual(['Dates firm=true', 'Calendar checked=false'])
+})
+
+test("1.3.3, 1.3.4, 1.3.5 — the second admin sees the first's work and completes it", async ({
+  page,
+}) => {
+  const bookingUrl = await openSeededTentative(page)
+
+  // 1.3.3 — the co-administrator signs in and opens the same booking.
+  await switchAdmin(page, SECOND_ADMIN_EMAIL)
+  await page.goto(bookingUrl)
+
+  // Both flag states are visible, with the first admin's attribution.
+  await expect(page.getByTestId('dates-firm-attribution')).toBeVisible()
+  await expect(page.getByTestId('status-chip')).toHaveText('Tentative')
+
+  // 1.3.4 — the second admin toggles the flag the first did not.
+  await page.getByTestId('toggle-availability').click()
+  await expect(page.getByTestId('availability-attribution')).toContainText(
+    `by ${SECOND_ADMIN_NAME.split(' ')[0]}`
+  )
+
+  // 1.3.5 — the status now reads Confirmed.
+  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
+})
+
+test('any admin may clear a flag the other set — there is no role restriction', async ({
+  page,
+}) => {
+  const bookingUrl = await openSeededTentative(page)
+  await switchAdmin(page, SECOND_ADMIN_EMAIL)
+  await page.goto(bookingUrl)
+
+  await page.getByTestId('toggle-dates-firm').click()
+  await expect(page.getByTestId('dates-firm-attribution')).toHaveCount(0)
+  await expect(page.getByTestId('status-chip')).toHaveText('Tentative')
+})
+
+test('each flag transition writes an attributed system entry', async ({ page }) => {
+  await openSeededTentative(page)
+  await page.getByTestId('toggle-availability').click()
+
+  const entry = page
+    .getByTestId('activity-entry')
+    .filter({ hasText: 'checked the family calendar' })
+  await expect(entry).toHaveCount(1)
+  await expect(entry).toHaveAttribute('data-system', 'true')
+  await expect(entry).toContainText(SEEDED_ADMIN_NAME)
+})
+
+test('cancelling is terminal and outranks the confirmation flags', async ({ page }) => {
+  await page.goto('/bookings?status=confirmed')
+  await page.getByTestId('booking-row').first().getByRole('link').first().click()
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
+
+  await page.getByTestId('cancel-booking').click()
+  await expect(page.getByTestId('status-chip')).toHaveText('Cancelled')
+})
+
+test('marking paid records the date and the method', async ({ page }) => {
+  await openSeededTentative(page)
+
+  await page.getByTestId('paid-on').fill('2026-08-16')
+  await page.getByTestId('paid-method').fill('Venmo')
+  await page.getByTestId('mark-paid').click()
+
+  // Wait for the write to be observable before reloading. Reloading straight
+  // after the click races the action, and the form comes back with the old
+  // values for a reason that has nothing to do with persistence.
+  await expect(
+    page.getByTestId('activity-entry').filter({ hasText: 'marked this booking paid' })
+  ).toHaveCount(1)
+
+  await page.reload()
+  await expect(page.getByTestId('paid-on')).toHaveValue('2026-08-16')
+  await expect(page.getByTestId('paid-method')).toHaveValue('Venmo')
+})
+
+test('no confirmation email is sent — that is Phase 3', async ({ page }) => {
+  // Spec §5.5 describes an email on transition to Confirmed carrying a portal
+  // link. Links are Phase 3, so the transition happens here and the
+  // notification does not. Asserted by the absence of any email_sends row.
+  const bookingUrl = await openSeededTentative(page)
+  await page.goto(bookingUrl)
+  await page.getByTestId('toggle-availability').click()
+  await expect(page.getByTestId('status-chip')).toHaveText('Confirmed')
+
+  const { countEmailSends } = await import('./fixtures')
+  expect(await countEmailSends()).toBe(0)
 })

@@ -268,7 +268,9 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 1.2.3 | `e2e/journey-1.spec.ts` | an instruction can be weather relevant with a different cadence | 2 |
 | 1.2.4 | `e2e/journey-1.spec.ts` | the property address is editable from the booking | 2 |
 | 1.2.5 | `e2e/journey-1.spec.ts` | the access code field is visibly labelled admin only | 2 |
+| 1.3.1 | `e2e/journey-1.spec.ts` | toggling "dates are firm" sets it and shows who and when | 2 |
 | 1.3.2 | `e2e/journey-1.spec.ts` | one flag set and one unset is visible without opening the booking | 2 |
+| 1.3.3, 1.3.4, 1.3.5 | `e2e/journey-1.spec.ts` | the second admin sees the first's work and completes it | 2 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |
 | 8.1.3 | `e2e/journey-8.spec.ts` | following the link creates a session and loads home | 1 |

@@ -2,29 +2,30 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 3 of 7 tasks complete
-**Next task:** 2.4 — The two confirmation actions — **the task carrying the `docs/spec.md` §10 open question**
+**Phase:** 2 — Admin surface — In progress, 4 of 7 tasks complete
+**Next task:** 2.5 — Visits: generation and editing
 
-**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, dates, care instructions (with booking-level overrides), property details, and a read-only activity list.
+**What's built in Phase 2:** the admin shell, `/home`, `/bookings`, `/customers`, `/bookings/new`, and `/bookings/[id]` with header, confirmation, dates, care instructions, property details, payment, terminal actions, and a read-only activity list.
 
-**Tests:** 220 unit, 139 integration, 44 end-to-end.
+**Tests:** 220 unit, 154 integration, 54 end-to-end.
 
-**What Task 2.4 must know:**
-- **Do not resolve the §10 open question.** Build the isolated availability-check submission exactly as `docs/spec.md` §5.5 specifies. If the friction is real, record the observation here and leave the behaviour alone — the human decides at the phase gate.
-- **Do not send the confirmation email.** §5.5 describes one carrying a portal link; links are Phase 3 and so is that email.
-- `changeBookingDates` in `src/services/bookings.ts` is the model for a transition: validate, write, then write the Reference data system entry attributed to the acting admin. It writes no entry when nothing actually changed — worth copying.
-- `actingAdmin()` is exported from `src/app/(admin)/actions/bookings.ts`.
-- The detail page already renders both `FlagIndicator`s in its header, with `formatAttribution` producing `Checked by Kate, Aug 4`. Task 2.4 adds the toggles, not the display.
+**THE §10 OPEN QUESTION IS NOW LIVE AND EVALUABLE.** The isolated availability-check submission is built exactly as `docs/spec.md` §5.5 specifies and was **not** relaxed. An observation for the human's evaluation at the phase gate, recorded now while it is fresh:
 
-**A judgement call worth revisiting:** `resolveEffectiveInstructions` in `src/services/care-instructions.ts` is a pure function that would sit naturally in `src/core/`. It is in the service layer because `tasks/phase-2.md` states nothing under `src/core/` is modified this phase. It is written as a pure function, so moving it later is free.
+> Building against the rule cost nothing. `setAvailabilityChecked` takes a booking and a boolean, so a combined save is structurally impossible rather than merely discouraged, and that made the service simpler to write and test than a general update would have been. Whether it costs an *admin* anything is a different question and is not answerable from here — it needs someone confirming a real booking on a phone. The friction the spec anticipates would show up as: having changed a date, you must now find and tap a second control before the booking becomes confirmed.
 
-**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged. `docs/dev-plan.md` describes the home screen that way; nothing in `docs/spec.md` defines that filter, there is no assignment model, and §5.11 says the equivalent digest content is "identical for every recipient".
+**What Task 2.5 must know:**
+- **Visits are generated on transition to `Confirmed`.** That transition happens in `setDatesFirm` and `setAvailabilityChecked` in `src/services/bookings.ts` — either can be the one that completes it, so generation must key off the resulting derived status rather than off which flag was toggled.
+- **A date change deliberately does not regenerate.** `changeBookingDates` leaves visits alone; `regenerateVisits` is its own explicit action per `docs/dev-plan.md` §7.3.
+- `generateVisits` in `src/core/schedule.ts` is the only scheduler. `effectiveInstructionsForBooking` in `src/services/care-instructions.ts` gives the instructions in force, overrides resolved.
+- `TRANSITION_ENTRIES` in `src/services/bookings.ts` holds the exact system entry text; add the `visitsRegenerated` entry there rather than at a call site.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1`.
+**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged.
 
-**Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; the `photos/[id]/route.ts` discrepancy. Plus the `/home` filtering gap.
+**Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1`.
 
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone** — the surface exists at `/bookings/new` and this can be done any time — and the **`docs/spec.md` §10 evaluation**, which needs Task 2.4 first.
+**Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`, plus the `/home` filtering gap and now the §10 evaluation.
+
+**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone**, and the **§10 evaluation** — both now performable.
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
@@ -33,6 +34,47 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.4: The two confirmation actions
+
+**What was done:**
+- `src/services/bookings.ts` — `setDatesFirm`, `setAvailabilityChecked`, `declineBooking`, `cancelBooking`, `markPaid`, and `TRANSITION_ENTRIES`
+- `src/app/(admin)/actions/confirmation.ts`
+- `src/components/ConfirmationSection.tsx` — the two toggles, payment, terminal actions
+- `src/services/confirmation.test.ts` — 15 tests; 10 more e2e specs; `switchAdmin` and `countEmailSends` fixtures
+
+**The §10 rule, built as specified and not relaxed.**
+
+`docs/spec.md` §5.5 requires that toggling "Checked the family calendar" is its own submission and is never combined with another change. That is enforced by a **signature**, not by discipline: `setAvailabilityChecked` takes a business, an admin, a booking, a boolean, and two instants. There is no argument through which a date change or an instruction edit could ride along, so a combined save is structurally impossible. The two controls are separate `<form>` elements with a visible separator between them, and an e2e test asserts the availability form's only fields are `bookingId` and `value`.
+
+**Decisions made:**
+
+- **Unsetting a flag clears both the instant and the actor.** A flag that remembered who set it after being cleared would attribute a state nobody is in.
+- **A no-op toggle writes nothing.** Setting a flag that is already set returns early rather than writing a duplicate activity entry.
+- **`TRANSITION_ENTRIES` holds the exact system entry text in one place** rather than at each call site, so the remaining tasks cannot each invent their own phrasing.
+- **`paidAt` is written as a calendar date**, not an instant — the day payment was received is what someone reconciling a bank statement is looking for.
+- **No confirmation email is sent.** §5.5 describes one carrying a portal link; links are Phase 3. There is an e2e test asserting that confirming a booking writes **zero** `email_sends` rows, so this cannot be added by accident later without going red.
+
+**A test that was racing rather than failing.** The mark-paid spec reloaded the page immediately after clicking, which raced the server action — the form came back with old values for a reason unrelated to persistence. Fixed by waiting for the activity entry to appear before reloading. Worth recording because the symptom looks exactly like a write that did not happen.
+
+**Not done:**
+- **No visit generation and no pricing snapshot on confirmation** — Tasks 2.5 and 2.6 own those, and this task's transition is what will trigger them.
+- **No manual activity entry** — Task 2.7.
+- **The §10 question was not resolved.** An observation for the human is recorded in Current State.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 154 tests |
+| `pnpm test:e2e` | PASS — 54 tests |
+| `pnpm build` | PASS |
+| `pnpm typecheck` / `pnpm lint` / `prettier --check` | PASS |
+| Drizzle query builder outside `src/db/` | none |
+| `sendEmail` anywhere in Phase 2 | none |
+
+---
 
 ## 2026-08-19 — Task 2.3: Booking detail — header, dates, and care instructions
 

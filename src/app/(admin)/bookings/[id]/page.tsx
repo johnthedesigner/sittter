@@ -17,6 +17,11 @@ import {
 } from '@/components/BookingSections'
 import type { InstructionView } from '@/components/BookingSections'
 import { effectiveInstructionsForBooking } from '@/services/care-instructions'
+import {
+  ConfirmationSection,
+  PaymentSection,
+  TerminalActions,
+} from '@/components/ConfirmationSection'
 import { getProperty } from '@/db/repositories/properties'
 import { env } from '@/lib/env'
 
@@ -102,6 +107,28 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Confirmation</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Two separate steps. A booking is confirmed once both are done and the dates are set.
+        </p>
+        <ConfirmationSection
+          bookingId={booking.id}
+          datesFirm={booking.datesFirmAt !== null}
+          datesFirmAttribution={formatAttribution(
+            'Set',
+            nameById.get(booking.datesFirmBy ?? '') ?? 'an admin',
+            booking.datesFirmAt?.toISOString() ?? null
+          )}
+          availabilityChecked={booking.availabilityCheckedAt !== null}
+          availabilityAttribution={formatAttribution(
+            'Checked',
+            nameById.get(booking.availabilityCheckedBy ?? '') ?? 'an admin',
+            booking.availabilityCheckedAt?.toISOString() ?? null
+          )}
+        />
+      </section>
+
+      <section className="mt-8">
         <h2 className="text-lg font-semibold tracking-tight">Care instructions</h2>
         <CareInstructionsSection
           bookingId={booking.id}
@@ -133,6 +160,16 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           />
         </section>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold tracking-tight">Payment</h2>
+        <PaymentSection
+          bookingId={booking.id}
+          paidAt={booking.paidAt}
+          paidMethodNote={booking.paidMethodNote}
+        />
+        <TerminalActions bookingId={booking.id} />
+      </section>
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
