@@ -258,6 +258,11 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | Journey steps | Test file | Test name | Phase |
 |---|---|---|---|
 | 1.1.1 | `e2e/journey-1.spec.ts` | the home screen shows today and a needs-attention list | 2 |
+| 1.1.2 | `e2e/journey-1.spec.ts` | the capture form opens with the customer field focused | 2 |
+| 1.1.3 | `e2e/journey-1.spec.ts` | typing an unmatched name offers to create that customer | 2 |
+| 1.1.4 | `e2e/journey-1.spec.ts` | choosing create shows the name and defaults to a new property | 2 |
+| 1.1.5 | `e2e/journey-1.spec.ts` | entering both dates turns "Dates are approximate" on | 2 |
+| 1.1.6, 1.1.7 | `e2e/journey-1.spec.ts` | capture saves and the detail screen shows Tentative and the note | 2 |
 | 1.3.2 | `e2e/journey-1.spec.ts` | one flag set and one unset is visible without opening the booking | 2 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |

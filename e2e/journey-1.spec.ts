@@ -2,8 +2,8 @@
  * Journey 1 — A neighbor asks in person, and the booking becomes confirmed.
  * Covers docs/user-journeys.md steps 1.1.1 and 1.3.2 so far.
  *
- * Later steps arrive with the tasks that build them: 1.1.2–1.1.7 in Task 2.2,
- * 1.2.x in Task 2.3, 1.3.1–1.3.5 in Task 2.4, 1.3.6 in Task 2.5.
+ * Later steps arrive with the tasks that build them: 1.2.x in Task 2.3,
+ * 1.3.1–1.3.5 in Task 2.4, 1.3.6 in Task 2.5.
  */
 
 import { ADMIN_STATUS_LABELS } from '../src/components/status'
@@ -115,4 +115,118 @@ test('the admin surface does not scroll horizontally on a phone', async ({ page 
 test('the acting admin is shown in the shell', async ({ page }) => {
   await page.goto('/home')
   await expect(page.getByTestId('acting-admin')).toHaveText('Sitter')
+})
+
+// ── Fast capture, steps 1.1.2 through 1.1.7 ──────────────────────────
+
+test('1.1.2 — the capture form opens with the customer field focused', async ({ page }) => {
+  await page.goto('/home')
+  await page.getByTestId('new-booking').click()
+
+  await expect(page).toHaveURL(/\/bookings\/new$/)
+  await expect(page.getByTestId('customer-input')).toBeFocused()
+})
+
+test('1.1.3 — typing an unmatched name offers to create that customer', async ({ page }) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Marguerite Okonjo')
+
+  const create = page.getByTestId('create-customer-option')
+  await expect(create).toBeVisible()
+  await expect(create).toContainText('Marguerite Okonjo')
+})
+
+test('1.1.3 — typing a matching name offers the existing customer, not a create', async ({
+  page,
+}) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Dana')
+
+  await expect(page.getByTestId('customer-option').first()).toContainText('Dana Whitfield')
+})
+
+test('1.1.4 — choosing create shows the name and defaults to a new property', async ({ page }) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Marguerite Okonjo')
+  await page.getByTestId('create-customer-option').click()
+
+  await expect(page.getByTestId('chosen-customer')).toHaveText('Marguerite Okonjo')
+  await expect(page.getByTestId('property-select')).toHaveValue('')
+})
+
+test('a customer with exactly one property has it selected already', async ({ page }) => {
+  // Seeded: Dana Whitfield has one property, Maple Street.
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Dana')
+  await page.getByTestId('customer-option').first().click()
+
+  const select = page.getByTestId('property-select')
+  await expect(select).not.toHaveValue('')
+  await expect(select.locator('option:checked')).toHaveText('Maple Street')
+})
+
+test('1.1.5 — entering both dates turns "Dates are approximate" on', async ({ page }) => {
+  await page.goto('/bookings/new')
+  await expect(page.getByTestId('dates-approximate')).not.toBeChecked()
+
+  await page.getByTestId('start-date').fill('2026-09-01')
+  await page.getByTestId('end-date').fill('2026-09-07')
+
+  await expect(page.getByTestId('dates-approximate')).toBeChecked()
+})
+
+test('1.1.6, 1.1.7 — capture saves and the detail screen shows Tentative and the note', async ({
+  page,
+}) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Marguerite Okonjo')
+  await page.getByTestId('create-customer-option').click()
+  await page.getByTestId('start-date').fill('2026-09-01')
+  await page.getByTestId('end-date').fill('2026-09-07')
+  await page.getByTestId('note').fill('Two cats, wants photos.')
+  await page.getByTestId('save-booking').click()
+
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+
+  await expect(page.getByTestId('booking-customer')).toHaveText('Marguerite Okonjo')
+  await expect(page.getByTestId('status-chip')).toHaveText('Tentative')
+
+  const entries = page.getByTestId('activity-entry')
+  await expect(entries).toHaveCount(2)
+  await expect(entries.filter({ hasText: 'Two cats, wants photos.' })).toHaveCount(1)
+  await expect(entries.filter({ hasText: 'created this booking' })).toHaveCount(1)
+})
+
+test('saving with only a customer name produces an Inquiry', async ({ page }) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Solo Name')
+  await page.getByTestId('create-customer-option').click()
+  await page.getByTestId('save-booking').click()
+
+  await page.waitForURL(/\/bookings\/[0-9a-f-]{36}$/)
+  await expect(page.getByTestId('status-chip')).toHaveText('Inquiry')
+})
+
+test('an end date before the start date is rejected with a message', async ({ page }) => {
+  await page.goto('/bookings/new')
+  await page.getByTestId('customer-input').fill('Backwards Dates')
+  await page.getByTestId('create-customer-option').click()
+  await page.getByTestId('start-date').fill('2026-09-07')
+  await page.getByTestId('end-date').fill('2026-09-01')
+  await page.getByTestId('save-booking').click()
+
+  await expect(page.getByTestId('capture-error')).toHaveText(
+    'The end date cannot be before the start date.'
+  )
+  // Still on the form, nothing written.
+  await expect(page).toHaveURL(/\/bookings\/new$/)
+})
+
+test('the capture form fits one-handed on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/bookings/new')
+  const overflows = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  )
+  expect(overflows).toBe(false)
 })

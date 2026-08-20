@@ -63,6 +63,9 @@ export type TimeWindow = 'morning' | 'midday' | 'afternoon' | 'evening' | 'anyti
 
 export type PricingComponentType = 'per_day' | 'per_visit' | 'flat' | 'per_hour' | 'custom'
 
+export type ActivitySource =
+  'text_message' | 'in_person' | 'email' | 'phone' | 'customer_form' | 'app'
+
 // ── Inputs ───────────────────────────────────────────────────────────
 
 export interface CareInstruction {

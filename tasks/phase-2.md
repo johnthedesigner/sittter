@@ -169,8 +169,8 @@ The navigation shell every admin screen sits in, the home screen, and the bookin
 
 ### Task 2.2 — Fast capture
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-19 — see `SESSION_LOG.md`
 > **Depends on:** Task 2.1
 
 **What this task implements:**
@@ -187,22 +187,22 @@ The capture screen and `createBooking`. This is the task the product's central p
 **Journey steps enabled:** 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7.
 
 **Acceptance criteria:**
-- [ ] The customer field is focused on load (step 1.1.2)
-- [ ] Typing a name matching no existing customer offers to create one; selecting it creates a customer with a name and nothing else, and that record is valid in that state
-- [ ] A customer with exactly one property has it auto-selected; a customer with more gets a list plus "New property"
-- [ ] **The only required field is a customer name.** Saving with everything else empty succeeds
-- [ ] Saving with no dates produces a booking deriving `inquiry`; saving with dates produces one deriving `tentative`
-- [ ] Entering both dates turns "Dates are approximate" on automatically (step 1.1.5)
-- [ ] An end date preceding the start date is rejected before the write, with a message naming the problem
-- [ ] The note is written to the activity log as the **first** entry, source `app`, `is_system` false
-- [ ] A `{Admin} created this booking.` system entry is written, attributed to the acting admin
-- [ ] `bookings.created_by` is set to the acting admin
-- [ ] Save returns to the booking detail screen (step 1.1.7)
-- [ ] The whole form is reachable and completable one-handed at 390px wide
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] The customer field is focused on load (step 1.1.2)
+- [x] Typing a name matching no existing customer offers to create one; selecting it creates a customer with a name and nothing else, and that record is valid in that state
+- [x] A customer with exactly one property has it auto-selected; a customer with more gets a list plus "New property"
+- [x] **The only required field is a customer name.** Saving with everything else empty succeeds
+- [x] Saving with no dates produces a booking deriving `inquiry`; saving with dates produces one deriving `tentative`
+- [x] Entering both dates turns "Dates are approximate" on automatically (step 1.1.5)
+- [x] An end date preceding the start date is rejected before the write, with a message naming the problem
+- [x] The note is written to the activity log as the **first** entry, source `app`, `is_system` false
+- [x] A `{Admin} created this booking.` system entry is written, attributed to the acting admin
+- [x] `bookings.created_by` is set to the acting admin
+- [x] Save returns to the booking detail screen (step 1.1.7)
+- [x] The whole form is reachable and completable one-handed at 390px wide
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not require a property, a date, or a note; a customer name is the only required field

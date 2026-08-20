@@ -2,30 +2,32 @@
 
 ## Current State
 
-**Phase:** 2 — Admin surface — In progress, 1 of 7 tasks complete
-**Next task:** 2.2 — Fast capture
+**Phase:** 2 — Admin surface — In progress, 2 of 7 tasks complete
+**Next task:** 2.3 — Booking detail: header, dates, and care instructions
 
-**What's built in Phase 2:** the admin shell with navigation and a persistent "New booking" action, `/home` (today + needs attention), `/bookings` (filterable list with both confirmation flags as columns), `/customers`, and the shared `StatusChip`, `FlagIndicator`, and formatters.
+**What's built in Phase 2:** the admin shell, `/home`, `/bookings` (filterable, both flags as columns), `/customers`, `/bookings/new` (fast capture), and a **partial** `/bookings/[id]`.
 
-**Tests:** 220 unit, 100 integration, 22 end-to-end.
+**Tests:** 220 unit, 119 integration, 32 end-to-end.
 
-**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** `docs/dev-plan.md` Phase 2 describes the home screen that way. The phrase has no definition in `docs/spec.md`, there is no assignment or ownership model to filter on, and §6.2 says all admins have identical capabilities. `docs/spec.md` §5.11 says the equivalent digest content is "identical for every recipient". **Not resolved:** the screen shows the same content to every admin. If filtering was meant to be something specific, it needs defining in the spec before a later task assumes otherwise.
+**`/bookings/[id]` is deliberately partial.** Journey step 1.1.7 requires the detail screen to load after capture and show the derived status and the note, so Task 2.2 built the header and the activity list. **Task 2.3 owns the rest** — the dates section and care instructions — and extends this page rather than creating it. Task 2.7 adds manual activity entry; the list is read-only today.
 
-**What Task 2.2 can rely on:**
-- `requireAdmin()` in `src/app/(admin)/layout.tsx` returns `{ businessId, admin }` — the acting admin every write must record.
-- `toBookingCore(row)` in `src/services/home.ts` maps a database row to the pure layer's `BookingCore`. Reuse it rather than writing a second mapper.
-- `listBookingSummaries`, `getBookingSummary`, `listVisitsForBookings`, `listVisitsOnDate`, `listVisitLogsForVisits`, `listCareInstructionsForProperties` were added to the repositories.
-- `formatCalendarDate`, `formatRange`, `formatCents`, `formatAttribution` in `src/components/format.ts`, and `ADMIN_STATUS_LABELS` in `src/components/status.ts`.
+**What Task 2.3 can rely on:**
+- `captureBooking`, `validateCapture`, and `CaptureError` in `src/services/bookings.ts`. `validateCapture` returns a sentence a person can act on, or null; the database's `range_ordered` constraint is a backstop that a user must never be the one to discover.
+- The `actingAdmin()` helper in `src/app/(admin)/actions/bookings.ts` resolves the acting admin for a server action, where `requireAdmin()`'s redirect semantics are wrong.
+- `ACTIVITY_SOURCE_LABELS` in `src/components/activity.ts`, `ActivitySource` in `src/core/types.ts`.
+- `searchCustomersByName`, `listCustomersForCapture` on the customers repository.
 
-**Two config changes Task 2.2 inherits:**
-- **The unit test glob now covers `src/{core,components}/**`.** META-PLAN §2 scoped it to `src/core/` before components existed; pure display helpers fell into neither suite. The `src/core/` boundary is unaffected — it is enforced by ESLint on the source, not by which runner executes a test.
-- **`pnpm test:e2e` runs a production build on port 3100, never reusing a server.** A developer's own `pnpm dev` on :3000 reads `.env` — the *main* branch — and Playwright silently adopting it made every fixture-minted sign-in token invalid. Next 16 also refuses a second dev server per directory, so `next start` is used rather than `next dev`. First run includes a build; subsequent runs are ~40s.
+**A resolved reference-data detail:** `docs/spec.md` §5.1 says the capture note is written with source `admin capture`. There is no such value in the `activity_source` enum. `tasks/phase-2.md` Reference data resolves it to `app` with `is_system` false, which is what was built.
 
-**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration and e2e. Playwright runs `workers: 1` because every spec truncates and reseeds that one branch.
+**An unspecified default that was chosen:** a brand-new customer gets a property nicknamed **`Home`** (`DEFAULT_PROPERTY_NICKNAME`). `properties.nickname` is NOT NULL and nothing specifies what a captured property should be called. Renameable in Task 2.3.
 
-**Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; and the `photos/[id]/route.ts` discrepancy. Plus the `/home` filtering gap above.
+**A GAP FOR THE HUMAN — `/home` "filtered by the acting admin".** Unchanged from Task 2.1. `docs/dev-plan.md` describes the home screen that way; nothing in `docs/spec.md` defines that filter, there is no assignment model, and §5.11 says the equivalent digest content is "identical for every recipient". The screen shows the same content to every admin.
 
-**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone** (Task 2.2 builds what it measures) and the **`docs/spec.md` §10 evaluation** of the isolated availability-check submission (Task 2.4).
+**Database:** one Neon project, two branches. `main` (`.env`, seeded) for development; `test` (`.env.test`) for integration and e2e. Playwright runs a production build on **:3100** with `workers: 1` and never reuses a server.
+
+**Open decisions the human owns.** Recommendations in `docs/phase-0-retro.md`: the `src/core/` import rule versus `obscenity`; the Vercel cron schedule; the TypeScript 6 pin; `docs/spec.md` §5.12 and two-step calendar onboarding; the `photos/[id]/route.ts` discrepancy. Plus the `/home` filtering gap.
+
+**Two Phase 2 review gates that are not code:** the **thirty-second capture measurement on a real phone** — *the surface it measures now exists at `/bookings/new`, so this can be done any time* — and the **`docs/spec.md` §10 evaluation** (Task 2.4).
 
 **Toolchain:** Node 22.17.1, pnpm 11.8.0, TypeScript 6.0.3 (pinned), Next 16.3.1, React 19.2.8, Tailwind 3.4.19 (pinned), Vitest 4.1.11 on Vite 8.2.1, Playwright 1.62.1, ESLint 10.8.1, Drizzle ORM 0.45.2, Neon Postgres.
 
@@ -34,6 +36,51 @@
 ---
 
 ## Session entries
+
+## 2026-08-19 — Task 2.2: Fast capture
+
+**What was done:**
+- `src/services/bookings.ts` — `captureBooking`, `validateCapture`, `CaptureError`
+- `src/app/(admin)/actions/bookings.ts` — `createBooking`, `loadPropertiesForCustomer`
+- `src/components/CaptureForm.tsx` — the client form
+- `src/app/(admin)/bookings/new/page.tsx`, and a partial `src/app/(admin)/bookings/[id]/page.tsx`
+- `src/components/activity.ts`, `ActivitySource` in `src/core/types.ts`
+- `src/services/bookings.test.ts` — 19 tests; `e2e/journey-1.spec.ts` — 10 more specs
+
+**Decisions made:**
+
+- **Validation happens in the service and returns a sentence, not an exception.** The `range_ordered` check constraint exists in the database, but a constraint violation is not an error message — a user must never be the one who discovers it. `validateCapture` runs before anything is written, and a test asserts that a rejected capture leaves no customer, property, or booking behind.
+- **The note is written before the system entry**, so it is genuinely first in the log's history. `docs/spec.md` §5.1 says the note is the first entry, even though "created this booking" is what logically happened first. The test asserts the ordering by `created_at` rather than by position in a query result.
+- **A server action needs its own admin resolution.** `requireAdmin()` redirects, which is right for a page and wrong for an action. `actingAdmin()` does the same lookup with action semantics.
+- **The capture form is a client component and the rest of the surface is not.** Three behaviours require it — focus on load, offering to create an unmatched name, and turning "approximate" on when dates are entered — and each exists to serve the thirty-second target rather than to be interactive for its own sake.
+- **`DEFAULT_PROPERTY_NICKNAME` is `'Home'`.** `properties.nickname` is NOT NULL and nothing specifies what a captured property should be called. Recorded rather than left implicit.
+
+**A reference-data mismatch resolved during planning, and worth repeating:** `docs/spec.md` §5.1 says the note carries source `admin capture`. The `activity_source` enum has no such value. The Reference data in `tasks/phase-2.md` resolved it to `app`, which is what was built — this is exactly the kind of thing Reference data exists to settle before a task has to invent it.
+
+**Two bugs of my own, both found by tests rather than by reading:**
+
+1. **`loadPropertiesForCustomer` was called with an empty id.** A customer chosen via "create new" has no id yet, and querying for one sent `''` where a uuid was expected. It surfaced as an opaque failed-query log line, not as a validation error.
+2. **The hidden `newCustomerName` input was rendered inside the "no customer chosen" branch.** The moment "create new" was tapped, the field vanished — so the form submitted neither an id nor a name, and the server correctly reported that a customer name was required for a form that plainly had one. Both hidden fields now live outside the branch, with a comment saying why.
+
+**Not done:**
+- **The dates section and care instructions** — Task 2.3, which extends `/bookings/[id]` rather than creating it.
+- **Confirmation toggles, visits, pricing, manual activity entry** — Tasks 2.4 through 2.7.
+- **No geocoding**, no link, no email.
+- **The thirty-second target has not been measured.** It is a hand measurement on a real phone at the phase gate; the surface it measures now exists.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 119 tests |
+| `pnpm test:e2e` | PASS — 32 tests |
+| `pnpm build` | PASS |
+| `pnpm typecheck` | PASS — zero errors |
+| `pnpm lint` | PASS — zero errors |
+| `prettier --check .` | PASS |
+
+---
 
 ## 2026-08-19 — Task 2.1: Admin shell, home, and the booking list
 

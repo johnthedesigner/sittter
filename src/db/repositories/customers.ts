@@ -4,7 +4,7 @@
  * Customers never sign in and hold no account. See `docs/spec.md` §6.2.
  */
 
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 import { db } from '../client'
 import { customers } from '../schema'
@@ -72,4 +72,30 @@ export async function updateCustomer(
     .where(and(eq(customers.businessId, businessId), eq(customers.id, customerId)))
     .returning()
   return row ?? null
+}
+
+/**
+ * Customers whose name matches, for the capture combobox.
+ *
+ * Case-insensitive substring match. Returns only what the combobox shows —
+ * `notes` is admin-only and this list is rendered into a client component.
+ */
+export async function searchCustomersByName(businessId: string, query: string) {
+  return db()
+    .select({ id: customers.id, name: customers.name })
+    .from(customers)
+    .where(
+      and(eq(customers.businessId, businessId), sql`${customers.name} ILIKE ${'%' + query + '%'}`)
+    )
+    .orderBy(customers.name)
+    .limit(20)
+}
+
+/** Every customer with their properties, for the capture form's initial render. */
+export async function listCustomersForCapture(businessId: string) {
+  return db()
+    .select({ id: customers.id, name: customers.name })
+    .from(customers)
+    .where(eq(customers.businessId, businessId))
+    .orderBy(customers.name)
 }
