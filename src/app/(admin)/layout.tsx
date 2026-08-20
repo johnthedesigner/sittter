@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 
+import { signOut } from './actions/auth'
 import { getOnlyBusiness } from '@/db/repositories/businesses'
 import { readSessionCookie } from '@/lib/session'
 import { verifySession } from '@/services/auth'
@@ -48,9 +49,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/customers">Customers</Link>
           <Link href="/settings">Settings</Link>
         </nav>
-        <span className="truncate text-xs text-stone-500" data-testid="acting-admin">
-          {admin.name}
-        </span>
+        {/*
+          The acting admin, and a way to stop being them. `signOut` existed
+          from Task 1.5 and was never surfaced, so switching admins meant
+          clearing cookies by hand — which is how someone gets stuck signed in
+          as the wrong person with no way back.
+        */}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="truncate text-xs text-stone-500" data-testid="acting-admin">
+            {admin.name}
+          </span>
+          <form action={signOut}>
+            <button type="submit" data-testid="sign-out" className="text-xs underline">
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="flex-1 px-4 py-4">{children}</div>

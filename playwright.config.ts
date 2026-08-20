@@ -50,6 +50,9 @@ export default defineConfig({
     env: {
       ...testEnv,
       RESEND_API_KEY: 'e2e-no-real-sends',
+      // Its own build directory. Sharing `.next` with a running `next dev`
+      // contends over the same files and can hang the build outright.
+      NEXT_DIST_DIR: '.next-e2e',
     },
   },
 })

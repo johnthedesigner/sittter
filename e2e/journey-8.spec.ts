@@ -140,3 +140,16 @@ test('a garbage session cookie redirects to sign-in rather than erroring', async
   await page.goto('/home')
   await expect(page).toHaveURL(/\/signin$/)
 })
+
+test('signing out returns to the sign-in page and ends the session', async ({ page }) => {
+  const link = await mintSignInLink(SEEDED_ADMIN_EMAIL)
+  await page.goto(link.url)
+  await expect(page).toHaveURL(/\/home$/)
+
+  await page.getByTestId('sign-out').click()
+  await expect(page).toHaveURL(/\/signin$/)
+
+  // The session is gone, not merely navigated away from.
+  await page.goto('/home')
+  await expect(page).toHaveURL(/\/signin$/)
+})

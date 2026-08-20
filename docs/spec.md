@@ -230,7 +230,7 @@ This is the stage the third product goal depends on. It is two independent actio
 
 - A separate toggle, visually and physically separated from the first.
 - Setting it records the acting admin and a timestamp.
-- It must not be combined with any other change into a single save action. Toggling it is its own submission. **Under review, see §10.** This rule encodes deliberateness as a hard constraint and may prove more friction than it is worth. It is to be evaluated against live use before it is treated as settled.
+- It must not be combined with any other change into a single save action. Toggling it is its own submission. **Settled 2026-08-20 after live evaluation at the Phase 2 review gate — see §10.** This rule encodes deliberateness as a hard constraint. It was reviewed against real use and kept.
 
 **Behavior:**
 
@@ -578,7 +578,7 @@ Each of these was discussed and deliberately excluded. This list is the thing to
 
 None blocking. Items deliberately deferred rather than decided:
 
-- **Whether "Checked the family calendar" must be its own isolated submission (§5.5).** Flagged during planning as a possible overreach: it encodes a social norm as a hard product rule, and it will be mildly annoying in the common case where an admin fixes a date and checks availability in the same sitting. **Review trigger:** first live use of the confirmation flow, at the Phase 2 review gate. **What to look for:** whether an admin has to submit twice for a single mental action, and whether relaxing the rule would make availability checking feel incidental. **Do not resolve this during implementation.** Build it as specified, then decide with real use in hand.
+- ~~**Whether "Checked the family calendar" must be its own isolated submission (§5.5).**~~ **RESOLVED 2026-08-20 at the Phase 2 review gate: the rule stands as written.** It was built exactly as specified and evaluated against live use. The isolation is enforced structurally — the service function that sets the flag takes a booking and a boolean and nothing else, so a combined save is impossible rather than merely discouraged. It is no longer an open question, and §5.5's "Under review" note no longer applies.
 - Whether the digest should also send the evening before. V1 sends once, in the morning, with the hour configurable. Revisit after a season of real use.
 - Whether the customer portal should show a running total across all engagements. Excluded from V1 to avoid implying an account balance.
 - Whether property access codes should be encrypted at rest beyond database-level encryption. V1 relies on database encryption and admin-only access. Revisit before any second business uses the system.

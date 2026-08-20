@@ -20,3 +20,5 @@ gcp-key*.json
 next-env.d.ts
 .tsbuildinfo
 *.tsbuildinfo
+
+.next-e2e
