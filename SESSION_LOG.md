@@ -2,23 +2,26 @@
 
 ## Current State
 
-**Phase:** 3 — Links and customer surfaces — In progress, 1 of 5 tasks complete
-**Next task:** 3.2 — `/s/[slug]` dispatch and the invalid-link page
+**Phase:** 3 — Links and customer surfaces — In progress, 2 of 5 tasks complete
+**Next task:** 3.3 — Public intake and the pre-addressed booking form
 
-**What's built in Phase 3:** `src/services/links.ts`, `src/lib/rate-limit.ts`, `src/db/repositories/rate-limit.ts`. No user-facing surface yet.
+**What's built in Phase 3:** `src/services/links.ts`, `src/lib/rate-limit.ts`, the rate-limit repository, and `/s/[slug]` — dispatch, the invalid-link page, and a read-only view of what a link resolves to.
 
-**Tests:** 220 unit, 218 integration, 79 end-to-end.
+**Tests:** 220 unit, 218 integration, 91 end-to-end.
 
-**What Task 3.2 can rely on:**
-- `resolveSlug(businessId, rawSlug, now, today)` returns a discriminated `Resolution`. **Every failure is `{ kind: 'invalid' }`** — malformed, never existed, expired, revoked, wrong business, missing target. A test asserts three of those are deep-equal, so the route renders one page for all of them.
-- A `booking_form` slug whose booking has moved past `tentative` resolves to `{ kind: 'customer_portal' }` for that booking's customer, per `docs/spec.md` §5.3 — not to `invalid`.
-- `rateLimit(key, at, limit)` and `slugResolutionKey(ip)` in `src/lib/rate-limit.ts`. The instant is an argument. The hit is counted whether or not it is allowed.
-- `linkUrl(appUrl, slug)` builds the absolute URL with no doubled slash.
-- `ensureCustomerLink`, `ensureBookingFormLink`, `ensurePublicIntakeLink`, `rotateCustomerLink` — all take a random source.
+**`/s/[slug]` renders inline rather than redirecting**, so the URL a customer was sent stays the URL they can bookmark (`docs/spec.md` §6.1). Tasks 3.3 and 3.4 replace the read-only views with the real form and the full portal at that same route.
 
-**Two exceptions to the business-scoping rule, both deliberate:** `src/db/repositories/rate-limit.ts` is not scoped by business, because a rate limit is about the caller and slug resolution happens before any business is known — the table has no business column for the same reason. The others remain `createBusiness` and `getOnlyBusiness`.
+**What Task 3.3 must know:**
+- **`/new` does not exist yet.** A `public_intake` slug redirects there, and an e2e test asserts the redirect target. Task 3.3 builds the page.
+- The booking-form view at `/s/[slug]` is currently read-only — property nickname, range, customer-facing status. Task 3.3 turns it into an editable form at that same route.
+- `src/db/repositories/bookings.ts` has `listBookingsForPortal` and `getBookingForPortal`, both naming every column. **Neither returns `accessCodes`, `accessNotes`, or any `*_by` actor column**, and an e2e test asserts the rendered HTML contains none of them.
+- The public routes call no `requireAdmin()` and render no admin shell — asserted by a test looking for the admin nav, the acting-admin name, and the New booking action.
 
-**A SPEC INCONSISTENCY FOR THE HUMAN TO CORRECT.** `docs/spec.md` §6.1 says slugs draw on "28 characters and roughly 17 million combinations". Crockford base32 is already 32 characters *because* `I`, `L`, `O`, and `U` are excluded, so they cannot be removed again. The code implements 32 and 33,554,432 with a test. On the Phase 3 completion checklist.
+**AN AMENDED ACCEPTANCE CRITERION.** Task 3.2 was written asking for HTTP 429 on rate limiting. **An App Router page cannot set a status code**, so exceeding the limit redirects to `/s-too-many`, which reveals nothing about any slug. A true 429 needs middleware. That is a larger change than the task warranted and is recorded here for **Phase 7's rate-limit tuning** — the criterion was written during planning without checking that the platform supported it, and was amended rather than quietly ticked.
+
+**A SPEC INCONSISTENCY FOR THE HUMAN TO CORRECT.** `docs/spec.md` §6.1 says slugs draw on "28 characters and roughly 17 million combinations". Crockford base32 is already 32 characters *because* `I`, `L`, `O`, and `U` are excluded. The code implements 32 and 33,554,432 with a test. On the Phase 3 completion checklist.
+
+**Deployed on Vercel from `main`.** `vercel.json` declares `framework: "nextjs"` because detection failed — probably confused by `pnpm-workspace.yaml` reading as a monorepo signal. **The cron it declares points at `/api/cron/daily`, which is not built until Phase 6**, so it fires against a 404 daily until then.
 
 **Database:** one Neon project, two branches. `main` (`.env`, seeded); `test` (`.env.test`). Playwright builds into `.next-e2e` on **:3100** with `workers: 1`.
 
@@ -29,6 +32,49 @@
 ---
 
 ## Session entries
+
+## 2026-08-21 — Task 3.2: `/s/[slug]` dispatch and the invalid-link page
+
+**What was done:**
+- `src/app/s/[slug]/page.tsx` — resolution, rate limiting, dispatch, and read-only views
+- `src/app/s/[slug]/not-found.tsx` — the invalid-link page
+- `src/app/s-too-many/page.tsx`, `src/components/link-copy.ts`
+- `src/db/repositories/bookings.ts` — `listBookingsForPortal`, `getBookingForPortal`
+- `e2e/journey-5.spec.ts` — 12 specs; link fixtures in `e2e/fixtures.ts`
+
+**A problem caught before it was written, not after.**
+
+The task file had this route dispatching by redirect to `/s/[slug]/portal` and `/s/[slug]/form`, which Tasks 3.3 and 3.4 would build. Those routes do not exist yet — and a missing child route falls through to the nearest `not-found.tsx`, which here is **the invalid-link page**. A perfectly valid link would have rendered "This link is no longer valid".
+
+Rendering inline instead fixes that and is closer to the spec anyway: `docs/spec.md` §6.1 fixes the URL shape at `/s/<slug>`, so the link a customer was sent is the link they can bookmark. The read-only views show real data — property nickname, service range, customer-facing status — rather than placeholder copy, and Tasks 3.3 and 3.4 replace them at the same route.
+
+**Decisions made:**
+
+- **Every failure calls `notFound()`.** A slug that never existed, an expired one, a revoked one, and one belonging to another business produce the same 404 and the same words. A test walks all three cases and asserts the status codes and the rendered text are equal, rather than merely that each is "some error".
+- **The invalid-link page names no slug and no cause.** A test asserts the body contains neither the slug that was tried nor the words "expired", "revoked", or "not found".
+- **Rate limiting runs before anything is looked up**, so this route cannot be used to probe at all.
+- **The portal reads name every column.** Neither returns `accessCodes`, `accessNotes`, nor any `*_by` actor column. A test seeds a known access code and asserts the rendered HTML contains neither it, nor the access notes, nor the admin's name, nor any system activity text — the Phase 3 gate's own check, written as a test rather than left for the gate.
+- **A test asserts no internal status name appears in the HTML**, so `toCustomerFacingLabel` cannot be bypassed later without going red.
+
+**An acceptance criterion amended rather than quietly ticked.** The task asked for HTTP 429 on rate limiting. An App Router page cannot set a status code; a true 429 needs middleware, which is a larger change than this task warrants. Exceeding the limit now redirects to `/s-too-many`, which reveals nothing about any slug. The criterion was written during planning without checking that the platform supported it. Amended in `tasks/phase-3.md` with the reason, and carried to Phase 7's rate-limit tuning.
+
+**Not done:**
+- **`/new` does not exist** — a `public_intake` slug redirects there and Task 3.3 builds it. The dispatch is what is tested.
+- **The booking-form view is read-only** — Task 3.3 makes it a form.
+- **The portal shows no care instructions, costs, past-engagement detail, or copy blocks** — Task 3.4.
+
+**Verification:**
+
+| Command | Result |
+|---|---|
+| `pnpm test:unit` | PASS — 220 tests |
+| `pnpm test:integration` | PASS — 218 tests |
+| `pnpm test:e2e` | PASS — 91 tests |
+| `pnpm build` / `typecheck` / `lint` / `prettier` | PASS |
+| `requireAdmin` in any public route | none |
+| `accessCodes` or `accessNotes` in a portal read | none |
+
+---
 
 ## 2026-08-20 — Task 3.1: Link storage, resolution, and rate limiting
 

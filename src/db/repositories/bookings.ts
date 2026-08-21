@@ -119,3 +119,81 @@ export async function listBookingsByIds(businessId: string, ids: string[]): Prom
     .from(bookings)
     .where(and(eq(bookings.businessId, businessId), inArray(bookings.id, ids)))
 }
+
+/**
+ * A customer's bookings, for a CUSTOMER-FACING surface.
+ *
+ * Names every column it returns. `docs/spec.md` §5.10 forbids access codes,
+ * access notes, activity entries, admin names, and any other customer's data
+ * from reaching the portal — so nothing from `properties` beyond the nickname
+ * appears here, and none of the `*_by` actor columns do either.
+ *
+ * The confirmation timestamps ARE returned, because `deriveStatus` needs them
+ * to compute the customer-facing label. They carry no admin identity.
+ */
+export interface PortalBooking {
+  id: string
+  propertyNickname: string
+  startDate: string | null
+  endDate: string | null
+  datesApproximate: boolean
+  datesFirmAt: Date | null
+  availabilityCheckedAt: Date | null
+  declinedAt: Date | null
+  cancelledAt: Date | null
+  paidAt: string | null
+  dayCountOverride: number | null
+  visitCountOverride: number | null
+}
+
+export async function listBookingsForPortal(
+  businessId: string,
+  customerId: string
+): Promise<PortalBooking[]> {
+  return db()
+    .select({
+      id: bookings.id,
+      propertyNickname: properties.nickname,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      datesApproximate: bookings.datesApproximate,
+      datesFirmAt: bookings.datesFirmAt,
+      availabilityCheckedAt: bookings.availabilityCheckedAt,
+      declinedAt: bookings.declinedAt,
+      cancelledAt: bookings.cancelledAt,
+      paidAt: bookings.paidAt,
+      dayCountOverride: bookings.dayCountOverride,
+      visitCountOverride: bookings.visitCountOverride,
+    })
+    .from(bookings)
+    .innerJoin(properties, eq(properties.id, bookings.propertyId))
+    .where(and(eq(bookings.businessId, businessId), eq(properties.customerId, customerId)))
+    .orderBy(bookings.startDate)
+}
+
+/** One booking, for a customer-facing surface. Same column discipline. */
+export async function getBookingForPortal(
+  businessId: string,
+  bookingId: string
+): Promise<PortalBooking | null> {
+  const [row] = await db()
+    .select({
+      id: bookings.id,
+      propertyNickname: properties.nickname,
+      startDate: bookings.startDate,
+      endDate: bookings.endDate,
+      datesApproximate: bookings.datesApproximate,
+      datesFirmAt: bookings.datesFirmAt,
+      availabilityCheckedAt: bookings.availabilityCheckedAt,
+      declinedAt: bookings.declinedAt,
+      cancelledAt: bookings.cancelledAt,
+      paidAt: bookings.paidAt,
+      dayCountOverride: bookings.dayCountOverride,
+      visitCountOverride: bookings.visitCountOverride,
+    })
+    .from(bookings)
+    .innerJoin(properties, eq(properties.id, bookings.propertyId))
+    .where(and(eq(bookings.businessId, businessId), eq(bookings.id, bookingId)))
+    .limit(1)
+  return row ?? null
+}

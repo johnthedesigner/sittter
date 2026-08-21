@@ -284,6 +284,7 @@ Populated as tasks complete, per the per-task rule above. A journey step range i
 | 9.1.5 | `e2e/journey-9.spec.ts` | copy summary puts plain text on the clipboard | 2 |
 | 9.1.6 | `e2e/journey-9.spec.ts` | raising the business default does not change a confirmed total | 2 |
 | 9.1.7 | `e2e/journey-9.spec.ts` | marking paid on a finished booking reads Closed | 2 |
+| 5.3.2 | `e2e/journey-5.spec.ts` | a revoked, an expired, and a never-existent slug are identical | 3 |
 | 8.1.1 | `e2e/journey-8.spec.ts` | opening the app signed out loads the sign-in page | 1 |
 | 8.1.2 | `e2e/journey-8.spec.ts` | submitting a registered email shows the confirmation message | 1 |
 | 8.1.3 | `e2e/journey-8.spec.ts` | following the link creates a session and loads home | 1 |

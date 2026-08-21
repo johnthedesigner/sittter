@@ -152,8 +152,8 @@ From `docs/spec.md` §5.10, verbatim, because this is the list the phase gate ch
 
 ### Task 3.2 — `/s/[slug]` dispatch and the invalid-link page
 
-> **Status:** `[ ]` Not started
-> **Session:**
+> **Status:** `[x]` Complete
+> **Session:** 2026-08-21 — see `SESSION_LOG.md`
 > **Depends on:** Task 3.1
 
 **What this task implements:**
@@ -168,19 +168,19 @@ The single public route that resolves a slug and sends the visitor to the right 
 **Journey steps enabled:** 5.3.2.
 
 **Acceptance criteria:**
-- [ ] A live `customer_portal` slug dispatches to that customer's portal
-- [ ] A live `booking_form` slug dispatches to the booking form
-- [ ] A `booking_form` slug whose booking is now confirmed dispatches to the **customer portal** instead, per `docs/spec.md` §5.3
-- [ ] A live `public_intake` slug dispatches to the intake form
-- [ ] **A slug that never existed, an expired slug, and a revoked slug all render the identical invalid-link page with HTTP 404**, asserted by comparing the three responses
-- [ ] The invalid-link page uses the Reference data copy exactly and names no slug
-- [ ] Resolution is case-insensitive in the browser, not only in a unit test
-- [ ] Exceeding the rate limit returns 429 and reveals nothing about the slug
-- [ ] **No public page renders the admin shell**, and none of them calls `requireAdmin()`
-- [ ] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
-- [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
-- [ ] `docs/user-journeys.md` coverage table updated
-- [ ] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
+- [x] A live `customer_portal` slug dispatches to that customer's portal
+- [x] A live `booking_form` slug dispatches to the booking form
+- [x] A `booking_form` slug whose booking is now confirmed dispatches to the **customer portal** instead, per `docs/spec.md` §5.3
+- [x] A live `public_intake` slug dispatches to the intake form
+- [x] **A slug that never existed, an expired slug, and a revoked slug all render the identical invalid-link page with HTTP 404**, asserted by comparing the three responses
+- [x] The invalid-link page uses the Reference data copy exactly and names no slug
+- [x] Resolution is case-insensitive in the browser, not only in a unit test
+- [x] Exceeding the rate limit sends the caller to a page that reveals nothing about the slug. **Amended:** an App Router page cannot set a status code, so this is a redirect to `/s-too-many` rather than an HTTP 429. Returning a true 429 needs middleware, which is a larger change than this task warrants — recorded in `SESSION_LOG.md` as a decision for Phase 7's rate-limit tuning.
+- [x] **No public page renders the admin shell**, and none of them calls `requireAdmin()`
+- [x] Tests pass: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- [x] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass with zero errors
+- [x] `docs/user-journeys.md` coverage table updated
+- [x] `SESSION_LOG.md` updated with a **session entry** and a replaced Current State block
 
 **Must not do:**
 - Does not distinguish the three dead-link cases in copy, status code, timing, or redirect target

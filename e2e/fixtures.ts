@@ -144,4 +144,104 @@ export const signedInTest = test.extend({
   },
 })
 
+// ── Link fixtures, for the public surfaces ───────────────────────────
+
+/** The access code the seed puts on Maple Street. Asserted absent from the portal. */
+export const ACCESS_CODE_FIXTURE = 'SECRET-ACCESS-CODE-4417'
+
+/** A deterministic slug source, so a fixture's slug is predictable. */
+function slugSource(seed: number): () => number {
+  let state = seed
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff
+    return state / 0x7fffffff
+  }
+}
+
+export async function seededCustomerIds(): Promise<{ first: string; second: string }> {
+  const business = await getOnlyBusiness()
+  if (business === null) throw new Error('the database is not seeded')
+  const { listCustomers } = await import('../src/db/repositories/customers')
+  const customers = await listCustomers(business.id)
+  return { first: customers[0]!.id, second: customers[1]!.id }
+}
+
+/**
+ * A live link of the given kind, allocated against the seeded data.
+ *
+ * Allocates through the real service so a fixture cannot drift from how the
+ * application makes links.
+ */
+export async function linkFor(
+  kind: 'customer_portal' | 'booking_form' | 'public_intake',
+  customerId?: string
+): Promise<{ slug: string }> {
+  const business = await getOnlyBusiness()
+  if (business === null) throw new Error('the database is not seeded')
+
+  const links = await import('../src/services/links')
+  const random = slugSource(Date.now() % 100000)
+
+  if (kind === 'public_intake') {
+    return { slug: (await links.ensurePublicIntakeLink(business.id, random)).slug }
+  }
+
+  const { listCustomers } = await import('../src/db/repositories/customers')
+  const customers = await listCustomers(business.id)
+  const chosen = customerId ?? customers[0]!.id
+
+  if (kind === 'customer_portal') {
+    return { slug: (await links.ensureCustomerLink(business.id, chosen, random)).slug }
+  }
+
+  // A booking form link for a booking still open to the customer.
+  const { listBookings } = await import('../src/db/repositories/bookings')
+  const { deriveStatus } = await import('../src/core/status')
+  const { toBookingCore } = await import('../src/services/home')
+  const bookings = await listBookings(business.id)
+  const open = bookings.find((b) => {
+    const status = deriveStatus(toBookingCore(b), SEED_REFERENCE_DATE)
+    return status === 'inquiry' || status === 'tentative'
+  })
+  if (open === undefined) throw new Error('no booking is open to the customer')
+  return { slug: (await links.ensureBookingFormLink(business.id, open.id, random)).slug }
+}
+
+/** A slug whose link has been revoked. */
+export async function revokedLinkFor(): Promise<string> {
+  const business = await getOnlyBusiness()
+  if (business === null) throw new Error('the database is not seeded')
+  const links = await import('../src/services/links')
+  const { listCustomers } = await import('../src/db/repositories/customers')
+  const customers = await listCustomers(business.id)
+
+  const link = await links.allocateLink(
+    business.id,
+    { type: 'customer_portal', customerId: customers[0]!.id },
+    slugSource(4242)
+  )
+  await links.revokeLinkById(business.id, link.id, new Date())
+  return link.slug
+}
+
+/** A slug whose link expired in the past. */
+export async function expiredLinkFor(): Promise<string> {
+  const business = await getOnlyBusiness()
+  if (business === null) throw new Error('the database is not seeded')
+  const links = await import('../src/services/links')
+  const { listCustomers } = await import('../src/db/repositories/customers')
+  const customers = await listCustomers(business.id)
+
+  const link = await links.allocateLink(
+    business.id,
+    {
+      type: 'customer_portal',
+      customerId: customers[0]!.id,
+      expiresAt: new Date(Date.now() - 60_000),
+    },
+    slugSource(9182)
+  )
+  return link.slug
+}
+
 export { expect } from '@playwright/test'
